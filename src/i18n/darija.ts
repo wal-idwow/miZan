@@ -153,7 +153,7 @@ export const darija = {
     importDesc: 'اختر ملف JSON سبق تصديرو لاسترجاع بياناتك',
     importButton: 'اختر ملف',
     importSuccess: 'البيانات استوردات بنجاح!',
-    importError: 'خطأ: الملف ما بصحش أو phiênة قديمة',
+    importError: 'خطأ: الملف غير صالح أو نسخة قديمة',
     demoTitle: 'سيناريو موظف تجريبي',
     demoDesc: 'حمل بيانات واقعية باش تجرب التطبيق فوراً',
     demoButton: 'حمّل السيناريو التجريبي',

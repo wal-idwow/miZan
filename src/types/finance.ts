@@ -106,5 +106,15 @@ export interface StoredData {
   updatedAt: number;
 }
 
+export const EMPTY_BASELINE: BaselineInput = {
+  fixedSalary: 0,
+  sideIncome: 0,
+  currentBalance: 0,
+  fixedBills: { rent: 0, utilities: 0, subscriptions: 0, other: 0 },
+  variableBuckets: { groceries: 0, transport: 0, leisure: 0, other: 0 },
+};
+
+export const EMPTY_WHAT_IF: WhatIfScenario = {};
+
 export const STORAGE_KEY = 'mizan-data';
 export const CURRENT_SCHEMA_VERSION = 1;
