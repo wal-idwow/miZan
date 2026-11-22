@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import type { BaselineInput, FinanceItem, WhatIfScenario, StoredData, ForecastResult } from './types/finance';
-import { computeForecast, computeWhatIfDelta, calculateItemProgress } from './engine/forecast';
+import { computeForecast, computeWhatIfDelta } from './engine/forecast';
 import { darija } from './i18n/darija';
 import { STORAGE_KEY, CURRENT_SCHEMA_VERSION } from './types/finance';
 
@@ -89,11 +89,15 @@ function formatDH(amount: number): string {
   return new Intl.NumberFormat('ar-MA', { style: 'currency', currency: 'MAD', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount);
 }
 
-function formatNumber(amount: number): string {
-  return new Intl.NumberFormat('ar-MA').format(Math.abs(Math.round(amount)));
+function formatSignedNumber(amount: number): string {
+  const abs = Math.abs(Math.round(amount));
+  const formatted = new Intl.NumberFormat('ar-MA').format(abs);
+  if (amount > 0) return `+${formatted}`;
+  if (amount < 0) return `-${formatted}`;
+  return formatted;
 }
 
-function ProgressBar({ pct, saved, total, label }: { pct: number; saved: number; total: number; label?: string }) {
+function ProgressBar({ pct, saved, total, monthlySlice, label }: { pct: number; saved: number; total: number; monthlySlice: number; label?: string }) {
   const clampedPct = Math.min(100, Math.max(0, pct));
   return (
     <div className="w-full" role="progressbar" aria-valuenow={Math.round(clampedPct)} aria-valuemin={0} aria-valuemax={100} aria-label={label || `Progress ${Math.round(clampedPct)}%`}>
@@ -106,7 +110,7 @@ function ProgressBar({ pct, saved, total, label }: { pct: number; saved: number;
         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-red-500/20 to-transparent pointer-events-none" style={{ width: `${100 - clampedPct}%`, left: `${clampedPct}%` }} />
       </div>
       <div className="flex justify-between text-xs mt-1">
-        <span>{darija.items.progress.monthlySlice}: {formatDH(calculateItemProgress({ totalAmount: total, alreadySaved: saved, targetMonth: 1, category: 'goal', id: '', name: '', createdAt: 0 }, 0).monthlySlice)}</span>
+        <span>{darija.items.progress.monthlySlice}: {formatDH(monthlySlice)}</span>
         <span className="font-medium">{Math.round(clampedPct)}%</span>
       </div>
     </div>
@@ -153,12 +157,22 @@ function TimelineChart({ monthly, currentBalance }: { monthly: ForecastResult['m
   const maxBalance = Math.max(...monthly.map(m => m.endingBalance), currentBalance, 0);
   const minBalance = Math.min(...monthly.map(m => m.endingBalance), currentBalance, 0);
   const range = maxBalance - minBalance || 1;
+  const viewBoxWidth = 600;
+  const viewBoxHeight = 160;
+  const paddingX = 30;
+  const paddingY = 20;
+  const chartWidth = viewBoxWidth - 2 * paddingX;
+  const chartHeight = viewBoxHeight - 2 * paddingY;
+
+  const getX = (i: number) => paddingX + (i / 11) * chartWidth;
+  const getY = (balance: number) => paddingY + (1 - (balance - minBalance) / range) * chartHeight;
+  const zeroY = getY(0);
 
   return (
     <div className="bg-white rounded-xl border p-4" role="img" aria-label={darija.vision.timelineAriaLabel}>
       <h4 className="text-sm font-medium text-gray-700 mb-3 text-center">{darija.vision.timelineTitle}</h4>
-      <div className="relative h-[120px]">
-        <svg viewBox="0 0 100 100" className="w-full h-full" preserveAspectRatio="none">
+      <div className="relative" style={{ width: '100%', height: viewBoxHeight }}>
+        <svg viewBox={`0 0 ${viewBoxWidth} ${viewBoxHeight}`} className="w-full h-auto" preserveAspectRatio="xMidYMid meet">
           <defs>
             <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor="#10b981" stopOpacity="0.3" />
@@ -168,31 +182,29 @@ function TimelineChart({ monthly, currentBalance }: { monthly: ForecastResult['m
           <polyline
             fill="url(#areaGradient)"
             stroke="#10b981"
-            strokeWidth="0.8"
+            strokeWidth="1.5"
             points={monthly.map((m: ForecastResult['monthly'][0], i: number) => {
-              const x = (i / 11) * 100;
-              const y = 100 - ((m.endingBalance - minBalance) / range) * 80;
-              return `${x.toFixed(1)},${y.toFixed(1)}`;
+              return `${getX(i).toFixed(1)},${getY(m.endingBalance).toFixed(1)}`;
             }).join(' ')}
           />
+          <line x1={paddingX} y1={zeroY} x2={viewBoxWidth - paddingX} y2={zeroY} stroke="#ef4444" strokeWidth="0.8" strokeDasharray="4,4" />
           {monthly.map((m: ForecastResult['monthly'][0], i: number) => {
-            const x = (i / 11) * 100;
-            const y = 100 - ((m.endingBalance - minBalance) / range) * 80;
+            const x = getX(i);
+            const y = getY(m.endingBalance);
             const isMilestone = m.isMilestone4 || m.isMilestone8 || m.isMilestone12;
             return (
               <g key={i}>
-                <circle cx={x.toFixed(1)} cy={y.toFixed(1)} r={isMilestone ? 3 : 2} fill={isMilestone ? '#f59e0b' : '#10b981'} />
+                <circle cx={x.toFixed(1)} cy={y.toFixed(1)} r={isMilestone ? 5 : 3.5} fill={isMilestone ? '#f59e0b' : '#10b981'} />
                 {isMilestone && (
-                  <text x={x.toFixed(1)} y={y - 8} textAnchor="middle" fontSize="4" fill="#f59e0b" fontWeight="bold">
+                  <text x={x.toFixed(1)} y={y - 10} textAnchor="middle" fontSize="10" fill="#f59e0b" fontWeight="bold" fontFamily="system-ui, sans-serif">
                     {m.isMilestone4 ? 'M4' : m.isMilestone8 ? 'M8' : 'M12'}
                   </text>
                 )}
               </g>
             );
           })}
-          <line x1="0" y1={100 - ((0 - minBalance) / range) * 80} x2="100" y2={100 - ((0 - minBalance) / range) * 80} stroke="#ef4444" strokeWidth="0.5" strokeDasharray="2,2" />
         </svg>
-        <div className="absolute bottom-0 left-0 right-0 flex justify-between text-[10px] text-gray-400 px-1">
+        <div className="absolute bottom-0 left-0 right-0 flex justify-between text-[10px] text-gray-400 px-1" style={{ bottom: '4px' }}>
           {monthly.filter((_: ForecastResult['monthly'][0], i: number) => i % 3 === 0 || i === 11).map((m: ForecastResult['monthly'][0], idx: number) => (
             <span key={idx} className="text-center w-[25%]">{m.label.split(' ')[0]}</span>
           ))}
@@ -203,16 +215,10 @@ function TimelineChart({ monthly, currentBalance }: { monthly: ForecastResult['m
 }
 
 function QuickCheckinModal({ isOpen, onClose, baseline, onSave }: { isOpen: boolean; onClose: () => void; baseline: BaselineInput; onSave: (b: BaselineInput) => void }) {
-  const [form, setForm] = useState<BaselineInput>(baseline);
-
-  useEffect(() => {
-    setForm(baseline);
-  }, [baseline]);
-
   if (!isOpen) return null;
 
   const handleSave = () => {
-    onSave(form);
+    onSave(baseline);
     onClose();
   };
 
@@ -227,15 +233,15 @@ function QuickCheckinModal({ isOpen, onClose, baseline, onSave }: { isOpen: bool
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">{darija.checkin.currentBalance}</label>
-            <input type="number" value={form.currentBalance} onChange={e => setForm({ ...form, currentBalance: Number(e.target.value) || 0 })} className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent" placeholder={darija.checkin.currentBalanceHint} aria-label={darija.checkin.currentBalance} />
+            <input type="number" value={baseline.currentBalance} onChange={e => onSave({ ...baseline, currentBalance: Number(e.target.value) || 0 })} className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent" placeholder={darija.checkin.currentBalanceHint} aria-label={darija.checkin.currentBalance} />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">{darija.checkin.fixedSalary}</label>
-            <input type="number" value={form.fixedSalary} onChange={e => setForm({ ...form, fixedSalary: Number(e.target.value) || 0 })} className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent" placeholder={darija.checkin.fixedSalaryHint} aria-label={darija.checkin.fixedSalary} />
+            <input type="number" value={baseline.fixedSalary} onChange={e => onSave({ ...baseline, fixedSalary: Number(e.target.value) || 0 })} className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent" placeholder={darija.checkin.fixedSalaryHint} aria-label={darija.checkin.fixedSalary} />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">{darija.checkin.sideIncome}</label>
-            <input type="number" value={form.sideIncome} onChange={e => setForm({ ...form, sideIncome: Number(e.target.value) || 0 })} className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent" placeholder={darija.checkin.sideIncomeHint} aria-label={darija.checkin.sideIncome} />
+            <input type="number" value={baseline.sideIncome} onChange={e => onSave({ ...baseline, sideIncome: Number(e.target.value) || 0 })} className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent" placeholder={darija.checkin.sideIncomeHint} aria-label={darija.checkin.sideIncome} />
           </div>
         </div>
         <div className="flex gap-3 mt-6">
@@ -285,20 +291,20 @@ function WhatIfPanel({ whatIf, onChange, onReset, onApply, delta, isOpen, onTogg
               <div className="grid grid-cols-3 gap-3 text-center">
                 <div className="p-3 bg-white rounded-lg border">
                   <div className="text-xs text-gray-500">{darija.whatIf.month4Impact}</div>
-                  <div className={`text-xl font-bold ${delta.deltas.month4 >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {delta.deltas.month4 >= 0 ? '+' : ''}{formatNumber(delta.deltas.month4)}
+                  <div className={`text-xl font-bold ${delta.deltas.month4 >= 0 ? 'text-green-600' : 'text-red-600'} inline-block`} dir="ltr">
+                    {formatSignedNumber(delta.deltas.month4)}
                   </div>
                 </div>
                 <div className="p-3 bg-white rounded-lg border">
                   <div className="text-xs text-gray-500">{darija.whatIf.month8Impact}</div>
-                  <div className={`text-xl font-bold ${delta.deltas.month8 >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {delta.deltas.month8 >= 0 ? '+' : ''}{formatNumber(delta.deltas.month8)}
+                  <div className={`text-xl font-bold ${delta.deltas.month8 >= 0 ? 'text-green-600' : 'text-red-600'} inline-block`} dir="ltr">
+                    {formatSignedNumber(delta.deltas.month8)}
                   </div>
                 </div>
                 <div className="p-3 bg-white rounded-lg border">
                   <div className="text-xs text-gray-500">{darija.whatIf.month12Impact}</div>
-                  <div className={`text-xl font-bold ${delta.deltas.month12 >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {delta.deltas.month12 >= 0 ? '+' : ''}{formatNumber(delta.deltas.month12)}
+                  <div className={`text-xl font-bold ${delta.deltas.month12 >= 0 ? 'text-green-600' : 'text-red-600'} inline-block`} dir="ltr">
+                    {formatSignedNumber(delta.deltas.month12)}
                   </div>
                 </div>
               </div>
@@ -330,24 +336,22 @@ function ItemList({ items, onAdd, onUpdate, onDelete, onAddPayment, forecast }: 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<Partial<FinanceItem>>({ name: '', category: 'goal', totalAmount: 0, alreadySaved: 0, targetMonth: 1 });
 
-  useEffect(() => {
-    if (editingId) {
-      const item = items.find(i => i.id === editingId);
-      if (item) setForm({ name: item.name, category: item.category, totalAmount: item.totalAmount, alreadySaved: item.alreadySaved, targetMonth: item.targetMonth });
-    } else {
-      setForm({ name: '', category: 'goal', totalAmount: 0, alreadySaved: 0, targetMonth: 1 });
-    }
-  }, [editingId, items]);
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (editingId) {
-      onUpdate({ ...form, id: editingId, createdAt: items.find(i => i.id === editingId)!.createdAt } as FinanceItem);
+      const item = items.find(i => i.id === editingId);
+      onUpdate({ ...form, id: editingId, createdAt: item!.createdAt } as FinanceItem);
     } else {
       onAdd({ ...form, id: crypto.randomUUID(), createdAt: Date.now() } as FinanceItem);
     }
     setShowForm(false);
     setEditingId(null);
+  };
+
+  const handleEdit = (item: FinanceItem) => {
+    setForm({ name: item.name, category: item.category, totalAmount: item.totalAmount, alreadySaved: item.alreadySaved, targetMonth: item.targetMonth });
+    setEditingId(item.id);
+    setShowForm(true);
   };
 
   if (items.length === 0 && !showForm) {
@@ -411,7 +415,8 @@ function ItemList({ items, onAdd, onUpdate, onDelete, onAddPayment, forecast }: 
         {items.map(item => {
           const progress = forecast.itemProgress.find((p: typeof forecast.itemProgress[0]) => p.item.id === item.id);
           const isCompleted = item.alreadySaved >= item.totalAmount;
-          const isOverdue = item.targetMonth > 0 && item.targetMonth < 12 && !isCompleted;
+          const monthsRemaining = progress?.monthsRemaining ?? item.targetMonth;
+          const isOverdue = !isCompleted && monthsRemaining <= 0;
           return (
             <article key={item.id} className="p-4 border border-gray-200 rounded-xl bg-white hover:shadow-sm transition-shadow">
               <div className="flex items-start justify-between gap-4 mb-3">
@@ -423,17 +428,17 @@ function ItemList({ items, onAdd, onUpdate, onDelete, onAddPayment, forecast }: 
                       {item.category === 'goal' ? darija.items.categories.goal : item.category === 'debt' ? darija.items.categories.debt : darija.items.categories.shock}
                     </span>
                     {isCompleted && <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700">{darija.items.progress.completed}</span>}
-                    {isOverdue && !isCompleted && <span className="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-700">{darija.items.progress.overdue}</span>}
+                    {isOverdue && <span className="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-700">{darija.items.progress.overdue}</span>}
                   </div>
                   <p className="text-sm text-gray-500">{darija.items.progress.monthlySlice}: {formatDH(progress?.monthlySlice || 0)} | {darija.items.progress.monthsLeft}: {progress?.monthsRemaining}</p>
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
-                  <button onClick={() => { setForm({ name: item.name, category: item.category, totalAmount: item.totalAmount, alreadySaved: item.alreadySaved, targetMonth: item.targetMonth }); setEditingId(item.id); setShowForm(true); }} className="p-2 text-gray-400 hover:text-gray-600" aria-label={`تعديل ${item.name}`}>✏️</button>
+                  <button onClick={() => handleEdit(item)} className="p-2 text-gray-400 hover:text-gray-600" aria-label={`تعديل ${item.name}`}>✏️</button>
                   <button onClick={() => { if (confirm(darija.items.form.deleteConfirm)) onDelete(item.id); }} className="p-2 text-gray-400 hover:text-red-600" aria-label={`حذف ${item.name}`}>🗑️</button>
                 </div>
               </div>
 
-              <ProgressBar pct={progress?.progressPct || 0} saved={item.alreadySaved} total={item.totalAmount} label={`${item.name}: ${Math.round(progress?.progressPct || 0)}%`} />
+              <ProgressBar pct={progress?.progressPct || 0} saved={item.alreadySaved} total={item.totalAmount} monthlySlice={progress?.monthlySlice || 0} label={`${item.name}: ${Math.round(progress?.progressPct || 0)}%`} />
 
               <div className="flex gap-3 mt-3 pt-3 border-t border-gray-100">
                 <button onClick={() => { const add = Math.ceil((item.totalAmount - item.alreadySaved) / Math.max(1, item.targetMonth)); onAddPayment(item.id, add); }} className="flex-1 py-2 px-3 bg-emerald-50 text-emerald-700 rounded-lg text-sm font-medium hover:bg-emerald-100 flex items-center justify-center gap-1">
@@ -514,7 +519,6 @@ function BucketsSection({ buckets, onChange }: { buckets: BaselineInput['variabl
 }
 
 function DataPersistence({ onExport, onImport, onLoadDemo }: { onExport: () => void; onImport: (file: File) => void; onLoadDemo: () => void }) {
-
   return (
     <section className="bg-white rounded-2xl border p-6 space-y-4" aria-labelledby="data-title">
       <h3 id="data-title" className="text-lg font-bold text-gray-900">{darija.data.exportTitle}</h3>
@@ -522,7 +526,6 @@ function DataPersistence({ onExport, onImport, onLoadDemo }: { onExport: () => v
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <button onClick={onExport} className="p-4 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors text-right">
-          <div className="text-xl mb-1">⬇️</div>
           <div className="font-medium text-gray-900">{darija.data.exportButton}</div>
           <div className="text-sm text-gray-500">JSON backup</div>
         </button>
@@ -530,7 +533,6 @@ function DataPersistence({ onExport, onImport, onLoadDemo }: { onExport: () => v
         <div className="relative">
           <input type="file" accept=".json" onChange={e => { if (e.target.files?.[0]) onImport(e.target.files[0]); }} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
           <label className="p-4 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors text-right cursor-pointer">
-            <div className="text-xl mb-1">📁</div>
             <div className="font-medium text-gray-900">{darija.data.importButton}</div>
             <div className="text-sm text-gray-500">{darija.data.importDesc}</div>
           </label>
@@ -572,11 +574,7 @@ export default function App() {
   const [showCheckin, setShowCheckin] = useState(false);
   const [showWhatIf, setShowWhatIf] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
-  const [isLoaded, setIsLoaded] = useState(false);
-
-  useEffect(() => {
-    setIsLoaded(true);
-  }, []);
+  const [isLoaded] = useState(true);
 
   const forecast = useForecast(baseline, items, whatIf);
   const delta = useWhatIfDelta(baseline, items, whatIf);
@@ -692,14 +690,16 @@ export default function App() {
         {/* Top Summary */}
         <section className="bg-white rounded-2xl border p-6" aria-labelledby="summary-title">
           <h2 id="summary-title" className="text-lg font-bold text-gray-900 mb-4">{darija.vision.title}</h2>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="p-4 rounded-xl bg-gray-50 border">
               <p className="text-sm text-gray-500">{darija.checkin.currentBalance}</p>
               <p className="text-2xl font-bold text-gray-900">{formatDH(baseline.currentBalance)}</p>
             </div>
             <div className="p-4 rounded-xl bg-gray-50 border">
-              <p className="text-sm text-gray-500">{darija.common.perMonth} {darija.nav.quickCheckin}</p>
-              <p className={`text-2xl font-bold ${freeCashflow >= 0 ? 'text-green-600' : 'text-red-600'}`}>{freeCashflow >= 0 ? '+' : ''}{formatNumber(freeCashflow)}</p>
+              <p className="text-sm text-gray-500">{darija.checkin.monthlyFreeCashflow}</p>
+              <p className={`text-2xl font-bold ${freeCashflow >= 0 ? 'text-green-600' : 'text-red-600'} inline-block`} dir="ltr">
+                {formatSignedNumber(freeCashflow)}
+              </p>
             </div>
             <div className="p-4 rounded-xl bg-gray-50 border">
               <p className="text-sm text-gray-500">{darija.items.title}</p>

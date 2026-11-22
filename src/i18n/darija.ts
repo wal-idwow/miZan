@@ -36,6 +36,7 @@ export const darija = {
     save: 'حفظ',
     cancel: 'إلغاء',
     savedToast: 'تم الحفظ، التوقعات حدّثات',
+    monthlyFreeCashflow: 'صافي التدفق الشهري',
   },
 
   // 4/8/12 Month Vision Cards
@@ -147,15 +148,15 @@ export const darija = {
   data: {
     exportTitle: 'تصدير بياناتك',
     exportDesc: 'حمل ملف JSON فيه كلشي: رصيد، صالير، أهداف، سيناريوهات...',
-    exportButton: '⬇️ حمل النسخة الاحتياطية',
+    exportButton: 'حمل النسخة الاحتياطية',
     importTitle: 'استيراد نسخة احتياطية',
     importDesc: 'اختر ملف JSON سبق تصديرو لاسترجاع بياناتك',
-    importButton: '📁 اختر ملف',
+    importButton: 'اختر ملف',
     importSuccess: 'البيانات استوردات بنجاح!',
     importError: 'خطأ: الملف ما بصحش أو phiênة قديمة',
     demoTitle: 'سيناريو موظف تجريبي',
     demoDesc: 'حمل بيانات واقعية باش تجرب التطبيق فوراً',
-    demoButton: '🎬 حمّل السيناريو التجريبي',
+    demoButton: 'حمّل السيناريو التجريبي',
     demoLoaded: 'السيناريو التجريبي تم تحميلو!',
     clearAll: 'مسح كلشي (خطر!)',
     clearConfirm: 'تأكد تمسح كل البيانات؟ هاد لا يمكن تراجعو.',
