@@ -17,7 +17,7 @@ interface ToastProps {
 export function Toast({ toast, onDismiss }: ToastProps) {
   useEffect(() => {
     if (!toast) return;
-    const duration = toast.durationMs ?? (toast.onAction ? 6000 : 3500);
+    const duration = toast.durationMs ?? (toast.onAction ? 5000 : 3500);
     const timer = setTimeout(() => {
       onDismiss();
     }, duration);
@@ -28,11 +28,11 @@ export function Toast({ toast, onDismiss }: ToastProps) {
 
   return (
     <div
-      className="fixed bottom-4 inset-x-4 sm:inset-x-auto sm:end-4 sm:w-96 z-50 animate-slide-down"
+      className="fixed bottom-[calc(4.75rem+env(safe-area-inset-bottom,0px))] md:bottom-4 inset-x-4 sm:inset-x-auto sm:end-4 sm:w-96 z-50 animate-slide-down"
       role="status"
       aria-live="polite"
     >
-      <div className="bg-gray-900 text-white px-4 py-3 rounded-xl shadow-lg flex items-center justify-between gap-3">
+      <div className="bg-ink-900 text-white px-4 py-3 rounded-xl shadow-raised flex items-center justify-between gap-3">
         <span className="text-sm">{toast.message}</span>
         {toast.actionLabel && toast.onAction ? (
           <button
@@ -41,7 +41,7 @@ export function Toast({ toast, onDismiss }: ToastProps) {
               toast.onAction?.();
               onDismiss();
             }}
-            className="text-sm font-semibold text-emerald-400 hover:text-emerald-300 px-2 py-1 min-h-[36px] shrink-0"
+            className="text-sm font-semibold text-brand-50 hover:text-white px-2 py-1 min-h-[36px] shrink-0 underline underline-offset-4"
           >
             {toast.actionLabel}
           </button>

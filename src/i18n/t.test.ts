@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { darija } from './darija';
-import { formatMonthsRemaining, t } from './t';
+import { daysSince, formatMonthsRemaining, formatRelativeDate, t } from './t';
 
 function collectLeafStrings(obj: unknown): string[] {
   if (typeof obj === 'string') return [obj];
@@ -47,5 +47,25 @@ describe('i18n template helper (t) & Darija dictionary', () => {
       expect(str).not.toContain('الصالير');
     }
     expect(darija.checkin.fixedSalary).toContain('الخلصة');
+  });
+
+  it('computes daysSince and formatRelativeDate in natural Moroccan Darija', () => {
+    const now = new Date(2026, 10, 23, 18, 0);
+    expect(daysSince(null, now)).toBeNull();
+    expect(formatRelativeDate(null, now)).toBeNull();
+
+    const todayTs = new Date(2026, 10, 23, 8, 0).getTime();
+    expect(daysSince(todayTs, now)).toBe(0);
+    expect(formatRelativeDate(todayTs, now)).toBe(darija.checkin.today);
+
+    const yesterdayTs = new Date(2026, 10, 22, 23, 0).getTime();
+    expect(daysSince(yesterdayTs, now)).toBe(1);
+    expect(formatRelativeDate(yesterdayTs, now)).toBe(darija.checkin.yesterday);
+
+    const fiveDaysAgoTs = new Date(2026, 10, 18, 10, 0).getTime();
+    expect(formatRelativeDate(fiveDaysAgoTs, now)).toBe('قبل 5 يام');
+
+    const twelveDaysAgoTs = new Date(2026, 10, 11, 10, 0).getTime();
+    expect(formatRelativeDate(twelveDaysAgoTs, now)).toBe('قبل 12 يوم');
   });
 });

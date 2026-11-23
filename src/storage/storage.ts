@@ -1,4 +1,5 @@
 // miZan — Local-First Storage Driver, Recovery & JSON Backup I/O
+import { darija } from '../i18n/darija';
 import { STORAGE_KEY, type StoredData } from '../types/finance';
 import {
   MAX_IMPORT_BYTES,
@@ -220,6 +221,38 @@ export function downloadRawText(
 export function exportBackupFile(data: StoredData, now: Date = new Date()): void {
   const dateStamp = now.toISOString().split('T')[0];
   downloadRawText(JSON.stringify(data, null, 2), `mizan-backup-${dateStamp}.json`);
+}
+
+export async function shareOrExportBackupFile(
+  data: StoredData,
+  now: Date = new Date()
+): Promise<'shared' | 'downloaded'> {
+  const dateStamp = now.toISOString().split('T')[0];
+  const filename = `mizan-backup-${dateStamp}.json`;
+  const json = JSON.stringify(data, null, 2);
+
+  if (
+    typeof navigator !== 'undefined' &&
+    typeof File !== 'undefined' &&
+    typeof navigator.canShare === 'function' &&
+    typeof navigator.share === 'function'
+  ) {
+    try {
+      const file = new File([json], filename, { type: 'application/json' });
+      if (navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: darija.app.name });
+        return 'shared';
+      }
+    } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') {
+        return 'shared';
+      }
+      // Fall through to file download on unsupported share error
+    }
+  }
+
+  downloadRawText(json, filename);
+  return 'downloaded';
 }
 
 export async function parseImportFile(

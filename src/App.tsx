@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import { darija } from './i18n/darija';
 import { t } from './i18n/t';
+import { useHashRoute } from './hooks/useHashRoute';
 import { usePersistentFinance } from './hooks/usePersistentFinance';
 import { useToast } from './hooks/useToast';
 import { toStoredData } from './state/financeReducer';
@@ -10,57 +11,41 @@ import {
   selectWhatIfDelta,
 } from './state/selectors';
 import {
-  exportBackupFile,
   loadPreImportSnapshot,
-  parseImportFile,
   savePreImportSnapshot,
+  shareOrExportBackupFile,
 } from './storage/storage';
 import { formatCurrencyText } from './utils/format';
-import { Header } from './components/Header';
-import { StorageStatusBanner } from './components/StorageStatusBanner';
-import { TopSummary } from './components/TopSummary';
-import { MilestoneCards } from './components/MilestoneCards';
-import { TimelineChart } from './components/TimelineChart';
-import { WhatIfPanel } from './components/WhatIfPanel';
-import { ItemList } from './components/ItemList';
-import { BudgetSections } from './components/BudgetSections';
-import { DataPersistence } from './components/DataPersistence';
+import { AppShell } from './components/layout/AppShell';
 import { QuickCheckinModal } from './components/QuickCheckinModal';
 import { Toast } from './components/ui/Toast';
-import type { BaselineInput, StoredItem, WhatIfScenario } from './types/finance';
+import { OverviewScreen } from './screens/OverviewScreen';
+import { GoalsScreen } from './screens/GoalsScreen';
+import { BudgetScreen } from './screens/BudgetScreen';
+import { DataScreen } from './screens/DataScreen';
+import type { BaselineInput, StoredData, StoredItem, WhatIfScenario } from './types/finance';
 
 export default function App() {
-  const [showCheckin, setShowCheckin] = useState(false);
-  const [showWhatIf, setShowWhatIf] = useState(false);
+  const { tab, pendingCheckin, consumePendingCheckin, navigate } = useHashRoute();
+  const [manualCheckin, setManualCheckin] = useState(false);
   const { toast, showToast, dismissToast } = useToast();
 
   const handleCrossTabSync = useCallback(() => showToast(darija.data.storage.otherTab), [showToast]);
   const { state, dispatch, storageStatus, dismissRecovered, downloadRecovered, resetAll } =
     usePersistentFinance({ onCrossTabSync: handleCrossTabSync });
 
-  const forecast = useMemo(
-    () => selectBaselineForecast(state.baseline, state.items),
-    [state.baseline, state.items]
-  );
-  const delta = useMemo(
-    () => selectWhatIfDelta(state.baseline, state.items, state.whatIf),
-    [state.baseline, state.items, state.whatIf]
-  );
+  const forecast = useMemo(() => selectBaselineForecast(state.baseline, state.items), [state.baseline, state.items]);
+  const delta = useMemo(() => selectWhatIfDelta(state.baseline, state.items, state.whatIf), [state.baseline, state.items, state.whatIf]);
   const freeCashflow = selectMonthlyFreeCashflow(forecast);
 
-  const handleExport = useCallback(() => {
-    exportBackupFile(toStoredData(state));
+  const handleExport = useCallback(async () => {
+    await shareOrExportBackupFile(toStoredData(state));
     dispatch({ type: 'MARK_EXPORTED' });
   }, [state, dispatch]);
 
-  const handleImport = useCallback(async (file: File) => {
-    const result = await parseImportFile(file);
-    if (!result.ok) {
-      showToast(darija.data.importErrors[result.code]);
-      return;
-    }
+  const handleImportConfirmed = useCallback((data: StoredData) => {
     savePreImportSnapshot(toStoredData(state));
-    dispatch({ type: 'IMPORT_DATA', data: result.data });
+    dispatch({ type: 'IMPORT_DATA', data });
     showToast(darija.data.importSuccess, {
       label: darija.data.importUndo,
       onAction: () => {
@@ -74,76 +59,88 @@ export default function App() {
     const existing = state.items.find(i => i.id === id);
     if (!existing || amount <= 0) return;
     const prevSaved = existing.alreadySaved;
-    const appliedAmount = Math.min(amount, Math.max(0, existing.totalAmount - prevSaved));
+    const applied = Math.min(amount, Math.max(0, existing.totalAmount - prevSaved));
     dispatch({ type: 'ADD_PAYMENT', id, amount });
-    showToast(
-      t(darija.items.progress.paymentToast, {
-        amount: formatCurrencyText(appliedAmount),
-        name: existing.name,
-      }),
-      {
-        label: darija.common.undo,
-        onAction: () => dispatch({ type: 'RESTORE_ITEM_SAVED', id, alreadySaved: prevSaved }),
-      }
-    );
+    showToast(t(darija.items.progress.paymentToast, { amount: formatCurrencyText(applied), name: existing.name }), {
+      label: darija.common.undo,
+      onAction: () => dispatch({ type: 'RESTORE_ITEM_SAVED', id, alreadySaved: prevSaved }),
+    });
   }, [state.items, dispatch, showToast]);
 
-  return (
-    <div dir="rtl" className="min-h-screen bg-gray-50">
-      <Header
-        onQuickCheckin={() => setShowCheckin(true)}
-        onWhatIfToggle={() => setShowWhatIf(prev => !prev)}
-        showWhatIf={showWhatIf}
-      />
+  const isCheckinOpen = manualCheckin || pendingCheckin;
+  const closeCheckin = () => {
+    setManualCheckin(false);
+    consumePendingCheckin();
+  };
+  const hasUserData =
+    state.items.length > 0 || state.baseline.currentBalance !== 0 || state.baseline.fixedSalary !== 0;
 
-      <main className="max-w-4xl mx-auto px-4 py-6 space-y-6 pb-24">
-        <StorageStatusBanner
-          status={storageStatus}
-          onExport={handleExport}
-          onDownloadRecovered={downloadRecovered}
-          onDismissRecovered={dismissRecovered}
-        />
-        <TopSummary baseline={state.baseline} freeCashflow={freeCashflow} itemsCount={state.items.length} />
-        <MilestoneCards milestones={forecast.milestones} />
-        <TimelineChart monthly={forecast.monthly} currentBalance={state.baseline.currentBalance} />
-        <WhatIfPanel
+  return (
+    <AppShell
+      activeTab={tab}
+      onNavigate={navigate}
+      onQuickCheckin={() => setManualCheckin(true)}
+      storageStatus={storageStatus}
+      onExport={handleExport}
+      onDownloadRecovered={downloadRecovered}
+      onDismissRecovered={dismissRecovered}
+    >
+      {tab === 'overview' ? (
+        <OverviewScreen
+          baseline={state.baseline}
+          balanceUpdatedAt={state.balanceUpdatedAt}
+          freeCashflow={freeCashflow}
+          forecast={forecast}
           whatIf={state.whatIf}
-          onChange={(whatIf: WhatIfScenario) => dispatch({ type: 'SET_WHAT_IF', whatIf })}
-          onReset={() => { dispatch({ type: 'RESET_WHAT_IF' }); showToast(darija.whatIf.resetToast); }}
-          onApply={() => { dispatch({ type: 'APPLY_WHAT_IF' }); showToast(darija.whatIf.appliedToast); }}
           delta={delta}
-          isOpen={showWhatIf}
-          onToggle={() => setShowWhatIf(prev => !prev)}
+          onQuickCheckin={() => setManualCheckin(true)}
+          onWhatIfChange={(whatIf: WhatIfScenario) => dispatch({ type: 'SET_WHAT_IF', whatIf })}
+          onWhatIfReset={() => { dispatch({ type: 'RESET_WHAT_IF' }); showToast(darija.whatIf.resetToast); }}
+          onWhatIfApply={() => { dispatch({ type: 'APPLY_WHAT_IF' }); showToast(darija.whatIf.appliedToast); }}
         />
-        <ItemList
+      ) : null}
+
+      {tab === 'goals' ? (
+        <GoalsScreen
           items={state.items}
+          forecast={forecast}
           onAdd={(item: StoredItem) => dispatch({ type: 'ADD_ITEM', item })}
           onUpdate={(item: StoredItem) => dispatch({ type: 'UPDATE_ITEM', item })}
           onDelete={id => dispatch({ type: 'DELETE_ITEM', id })}
           onAddPayment={handleAddPayment}
-          forecast={forecast}
         />
-        <BudgetSections
-          bills={state.baseline.fixedBills}
+      ) : null}
+
+      {tab === 'budget' ? (
+        <BudgetScreen
+          baseline={state.baseline}
+          forecast={forecast}
+          freeCashflow={freeCashflow}
           onBillsChange={fixedBills => dispatch({ type: 'UPDATE_BILLS', fixedBills })}
-          buckets={state.baseline.variableBuckets}
           onBucketsChange={variableBuckets => dispatch({ type: 'UPDATE_BUCKETS', variableBuckets })}
         />
-        <DataPersistence
+      ) : null}
+
+      {tab === 'data' ? (
+        <DataScreen
+          itemsCount={state.items.length}
+          hasUserData={hasUserData}
+          lastExportAt={state.meta.lastExportAt}
           onExport={handleExport}
-          onImport={handleImport}
+          onImportConfirmed={handleImportConfirmed}
+          onImportError={msg => showToast(msg)}
           onLoadDemo={() => { dispatch({ type: 'LOAD_DEMO' }); showToast(darija.data.demoLoaded); }}
           onClearAll={resetAll}
         />
-      </main>
+      ) : null}
 
       <QuickCheckinModal
-        isOpen={showCheckin}
-        onClose={() => setShowCheckin(false)}
+        isOpen={isCheckinOpen}
+        onClose={closeCheckin}
         baseline={state.baseline}
         onSave={(baseline: BaselineInput) => { dispatch({ type: 'UPDATE_BASELINE', baseline }); showToast(darija.checkin.savedToast); }}
       />
       <Toast toast={toast} onDismiss={dismissToast} />
-    </div>
+    </AppShell>
   );
 }

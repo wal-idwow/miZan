@@ -25,24 +25,24 @@ export function ConfirmDialog({
 }: ConfirmDialogProps) {
   const confirmStyles =
     variant === 'destructive'
-      ? 'bg-red-600 text-white hover:bg-red-700'
-      : 'bg-emerald-600 text-white hover:bg-emerald-700';
+      ? 'bg-negative-600 text-white hover:opacity-90'
+      : 'bg-brand-600 text-white hover:bg-brand-700';
 
   return (
     <Sheet isOpen={isOpen} onClose={onClose} title={title} variant="dialog" closeOnBackdrop>
-      <p className="text-sm text-gray-500 mb-6">{message}</p>
+      <p className="text-sm text-ink-600 mb-6">{message}</p>
       <div className="flex gap-3 justify-end">
         <button
           type="button"
           onClick={onClose}
-          className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 min-h-[44px]"
+          className="px-4 py-2.5 border border-line rounded-xl text-ink-600 font-medium hover:bg-surface min-h-[44px]"
         >
           {cancelText || darija.common.cancel}
         </button>
         <button
           type="button"
           onClick={onConfirm}
-          className={`px-4 py-2 ${confirmStyles} rounded-lg font-medium min-h-[44px]`}
+          className={`px-4 py-2.5 ${confirmStyles} rounded-xl font-semibold min-h-[44px]`}
         >
           {confirmText || darija.common.confirm}
         </button>

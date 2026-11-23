@@ -1,5 +1,6 @@
-// miZan — Ergonomic Currency Input (supports clearing and Arabic-Indic numerals)
+// miZan — Ergonomic Currency Input (supports clearing, Arabic-Indic numerals, and suffix adornment)
 import { useState } from 'react';
+import { darija } from '../../i18n/darija';
 import { parseMoneyInput } from '../../utils/format';
 
 interface MoneyInputProps {
@@ -13,6 +14,9 @@ interface MoneyInputProps {
   ariaLabel?: string;
   ariaDescribedBy?: string;
   className?: string;
+  inputClassName?: string;
+  suffix?: string;
+  size?: 'md' | 'lg';
   autoFocus?: boolean;
   disabled?: boolean;
   required?: boolean;
@@ -29,6 +33,9 @@ export function MoneyInput({
   ariaLabel,
   ariaDescribedBy,
   className = '',
+  inputClassName = '',
+  suffix = darija.common.currency,
+  size = 'md',
   autoFocus = false,
   disabled = false,
   required = false,
@@ -71,24 +78,37 @@ export function MoneyInput({
     }
   };
 
+  const sizeWrapperClass = size === 'lg' ? 'min-h-[56px] px-4' : 'min-h-[44px] px-3';
+  const sizeInputClass = size === 'lg' ? 'text-2xl sm:text-3xl font-bold py-2.5' : 'text-base py-2';
+  const alignClass = inputClassName.includes('text-center') ? '' : 'text-end';
+
   return (
-    <input
-      id={id}
-      type="text"
-      inputMode="numeric"
-      enterKeyHint="done"
-      dir="ltr"
-      value={displayValue}
-      onFocus={handleFocus}
-      onChange={handleChange}
-      onBlur={handleBlur}
-      placeholder={placeholder}
-      aria-label={ariaLabel}
-      aria-describedby={ariaDescribedBy}
-      autoFocus={autoFocus}
-      disabled={disabled}
-      required={required}
-      className={`w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent min-h-[44px] text-start ${className}`}
-    />
+    <div
+      className={`flex items-center gap-2 w-full bg-card border border-line rounded-xl focus-within:ring-2 focus-within:ring-brand-600 focus-within:border-transparent transition-shadow ${sizeWrapperClass} ${
+        disabled ? 'opacity-60 bg-surface' : ''
+      } ${className}`}
+    >
+      <input
+        id={id}
+        type="text"
+        inputMode="numeric"
+        enterKeyHint="done"
+        dir="ltr"
+        value={displayValue}
+        onFocus={handleFocus}
+        onChange={handleChange}
+        onBlur={handleBlur}
+        placeholder={placeholder}
+        aria-label={ariaLabel}
+        aria-describedby={ariaDescribedBy}
+        autoFocus={autoFocus}
+        disabled={disabled}
+        required={required}
+        className={`flex-1 min-w-0 bg-transparent outline-none tabular-nums text-ink-900 placeholder:text-ink-400 ${sizeInputClass} ${alignClass} ${inputClassName}`}
+      />
+      {suffix ? (
+        <span className="text-xs font-medium text-ink-400 shrink-0 select-none">{suffix}</span>
+      ) : null}
+    </div>
   );
 }

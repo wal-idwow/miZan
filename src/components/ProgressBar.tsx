@@ -1,4 +1,4 @@
-// miZan — Saved and Remaining Track Bar
+// miZan — Slim 8px Logical Two-Tone Progress Track
 import { darija } from '../i18n/darija';
 import { t } from '../i18n/t';
 import { Money } from './ui/Money';
@@ -7,7 +7,6 @@ interface ProgressBarProps {
   pct: number;
   saved: number;
   total: number;
-  monthlySlice: number;
   itemName?: string;
   label?: string;
 }
@@ -16,12 +15,12 @@ export function ProgressBar({
   pct,
   saved,
   total,
-  monthlySlice,
   itemName,
   label,
 }: ProgressBarProps) {
   const clampedPct = Math.min(100, Math.max(0, pct));
   const roundedPct = Math.round(clampedPct);
+  const remaining = Math.max(0, total - saved);
   const ariaLabel =
     label ||
     (itemName
@@ -30,32 +29,29 @@ export function ProgressBar({
 
   return (
     <div
-      className="w-full"
+      className="w-full space-y-1.5"
       role="progressbar"
       aria-valuenow={roundedPct}
       aria-valuemin={0}
       aria-valuemax={100}
       aria-label={ariaLabel}
     >
-      <div className="flex justify-between text-xs mb-1 gap-2">
-        <span className="text-green-700">
+      <div className="flex justify-between items-center text-xs gap-2">
+        <span className="text-positive-600 font-medium">
           {darija.items.progress.saved}: <Money amount={saved} />
         </span>
-        <span className="text-red-700">
-          {darija.items.progress.remaining}: <Money amount={Math.max(0, total - saved)} />
+        <span className="text-ink-600">
+          {darija.items.progress.remaining}: <Money amount={remaining} />
         </span>
       </div>
-      <div className="h-3 bg-rose-100 rounded-full overflow-hidden">
-        <div
-          className="h-full bg-emerald-500 transition-all duration-500 rounded-full"
-          style={{ width: `${clampedPct}%` }}
-        />
-      </div>
-      <div className="flex justify-between text-xs mt-1 gap-2">
-        <span>
-          {darija.items.progress.monthlySlice}: <Money amount={monthlySlice} />
-        </span>
-        <span className="font-medium tabular-nums">
+      <div className="flex items-center gap-2.5">
+        <div className="flex-1 h-2 bg-negative-50 rounded-full overflow-hidden">
+          <div
+            className="h-full bg-positive-600 transition-all duration-500 rounded-full"
+            style={{ width: `${clampedPct}%` }}
+          />
+        </div>
+        <span className="text-xs font-semibold text-ink-600 tabular-nums shrink-0">
           <bdi dir="ltr">{roundedPct}%</bdi>
         </span>
       </div>

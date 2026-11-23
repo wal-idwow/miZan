@@ -55,20 +55,20 @@ function CustomPaymentForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <p className="text-sm font-medium text-gray-800">{itemName}</p>
-        <p className="text-xs text-gray-500 mt-0.5">{darija.items.progress.addPaymentHint}</p>
+        <p className="text-sm font-semibold text-ink-900">{itemName}</p>
+        <p className="text-xs text-ink-600 mt-0.5">{darija.items.progress.addPaymentHint}</p>
       </div>
 
       <div className="grid grid-cols-2 gap-2 text-sm">
-        <div className="p-2.5 bg-gray-50 rounded-lg text-center">
-          <p className="text-xs text-gray-500">{darija.items.progress.monthlySlice}</p>
-          <p className="font-medium text-gray-900">
+        <div className="p-2.5 bg-surface rounded-xl text-center">
+          <p className="text-xs text-ink-400">{darija.items.progress.monthlySlice}</p>
+          <p className="font-semibold text-ink-900">
             <Money amount={monthlySlice} />
           </p>
         </div>
-        <div className="p-2.5 bg-gray-50 rounded-lg text-center">
-          <p className="text-xs text-gray-500">{darija.items.progress.remaining}</p>
-          <p className="font-medium text-gray-900">
+        <div className="p-2.5 bg-surface rounded-xl text-center">
+          <p className="text-xs text-ink-400">{darija.items.progress.remaining}</p>
+          <p className="font-semibold text-ink-900">
             <Money amount={remainingAmount} />
           </p>
         </div>
@@ -76,17 +76,17 @@ function CustomPaymentForm({
 
       {quickAmounts.length > 0 ? (
         <div>
-          <p className="text-xs text-gray-500 mb-2">{darija.items.progress.quickAmounts}</p>
+          <p className="text-xs text-ink-400 mb-2">{darija.items.progress.quickAmounts}</p>
           <div className="flex gap-2 flex-wrap">
             {quickAmounts.map(q => (
               <button
                 type="button"
                 key={q.value}
                 onClick={() => setAmount(q.value)}
-                className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors min-h-[44px] ${
+                className={`px-3 py-2 rounded-xl text-xs font-semibold transition-colors min-h-[44px] border ${
                   amount === q.value
-                    ? 'bg-emerald-100 text-emerald-700 border border-emerald-300'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    ? 'bg-brand-50 text-brand-700 border-brand-600'
+                    : 'bg-surface text-ink-600 border-line hover:text-ink-900'
                 }`}
               >
                 {q.label}
@@ -100,12 +100,13 @@ function CustomPaymentForm({
         {({ id }) => (
           <MoneyInput
             id={id}
+            size="lg"
             value={amount}
             onChange={setAmount}
             min={0}
             max={Math.max(0, remainingAmount)}
             placeholder={formatCurrencyText(remainingAmount)}
-            className="text-2xl text-center min-h-[48px]"
+            inputClassName="text-center"
             autoFocus
           />
         )}
@@ -115,14 +116,14 @@ function CustomPaymentForm({
         <button
           type="button"
           onClick={onClose}
-          className="flex-1 py-3 px-4 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 min-h-[44px]"
+          className="flex-1 py-3 px-4 border border-line rounded-xl text-ink-600 font-medium hover:bg-surface min-h-[44px]"
         >
           {darija.common.cancel}
         </button>
         <button
           type="submit"
           disabled={isInvalid}
-          className="flex-1 py-3 px-4 bg-emerald-600 text-white rounded-lg font-medium hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
+          className="flex-1 py-3 px-4 bg-brand-600 text-white rounded-xl font-semibold hover:bg-brand-700 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
         >
           {darija.common.save}
         </button>

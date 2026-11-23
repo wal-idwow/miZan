@@ -1,4 +1,5 @@
 // miZan — Local Storage Resilience & Recovery Banners
+import { AlertTriangle } from 'lucide-react';
 import { darija } from '../i18n/darija';
 import type { StorageStatus } from '../hooks/usePersistentFinance';
 
@@ -24,12 +25,15 @@ export function StorageStatusBanner({
   return (
     <div className="space-y-2" role="region" aria-live="polite">
       {showUnavailable ? (
-        <div className="bg-amber-50 border border-amber-200 text-amber-900 rounded-xl p-4 flex flex-wrap items-center justify-between gap-3">
-          <p className="text-sm">{darija.data.storage.unavailable}</p>
+        <div className="bg-warning-50 border border-warning-600/20 text-ink-900 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5 text-sm">
+            <AlertTriangle size={18} strokeWidth={1.75} className="text-warning-600 shrink-0" aria-hidden="true" />
+            <p>{darija.data.storage.unavailable}</p>
+          </div>
           <button
             type="button"
             onClick={onExport}
-            className="px-3 py-2 bg-amber-600 text-white rounded-lg text-xs font-medium hover:bg-amber-700 min-h-[44px]"
+            className="px-3.5 py-2 bg-warning-600 text-white rounded-xl text-xs font-semibold hover:opacity-90 min-h-[44px]"
           >
             {darija.data.exportButton}
           </button>
@@ -37,12 +41,15 @@ export function StorageStatusBanner({
       ) : null}
 
       {showFull ? (
-        <div className="bg-red-50 border border-red-200 text-red-900 rounded-xl p-4 flex flex-wrap items-center justify-between gap-3">
-          <p className="text-sm">{darija.data.storage.full}</p>
+        <div className="bg-negative-50 border border-negative-600/20 text-ink-900 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5 text-sm">
+            <AlertTriangle size={18} strokeWidth={1.75} className="text-negative-600 shrink-0" aria-hidden="true" />
+            <p>{darija.data.storage.full}</p>
+          </div>
           <button
             type="button"
             onClick={onExport}
-            className="px-3 py-2 bg-red-600 text-white rounded-lg text-xs font-medium hover:bg-red-700 min-h-[44px]"
+            className="px-3.5 py-2 bg-negative-600 text-white rounded-xl text-xs font-semibold hover:opacity-90 min-h-[44px]"
           >
             {darija.data.exportButton}
           </button>
@@ -50,20 +57,23 @@ export function StorageStatusBanner({
       ) : null}
 
       {showCorrupt ? (
-        <div className="bg-amber-50 border border-amber-200 text-amber-900 rounded-xl p-4 flex flex-wrap items-center justify-between gap-3">
-          <p className="text-sm">{darija.data.storage.recovered}</p>
+        <div className="bg-warning-50 border border-warning-600/20 text-ink-900 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5 text-sm">
+            <AlertTriangle size={18} strokeWidth={1.75} className="text-warning-600 shrink-0" aria-hidden="true" />
+            <p>{darija.data.storage.recovered}</p>
+          </div>
           <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={onDownloadRecovered}
-              className="px-3 py-2 bg-amber-600 text-white rounded-lg text-xs font-medium hover:bg-amber-700 min-h-[44px]"
+              className="px-3.5 py-2 bg-warning-600 text-white rounded-xl text-xs font-semibold hover:opacity-90 min-h-[44px]"
             >
               {darija.data.storage.downloadRecovered}
             </button>
             <button
               type="button"
               onClick={onDismissRecovered}
-              className="px-3 py-2 border border-amber-300 text-amber-800 rounded-lg text-xs font-medium hover:bg-amber-100 min-h-[44px]"
+              className="px-3.5 py-2 border border-line bg-card text-ink-600 rounded-xl text-xs font-medium hover:bg-surface min-h-[44px]"
             >
               {darija.common.close}
             </button>
