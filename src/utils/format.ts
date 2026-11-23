@@ -1,8 +1,16 @@
 // miZan — RTL-safe formatting and numeric parsing utilities
 // All amounts in MAD (DH)
+import { darija } from '../i18n/darija';
+import { t } from '../i18n/t';
 
 const DEFAULT_MAX_AMOUNT = 1_000_000_000;
 const DEFAULT_MIN_BALANCE = -1_000_000_000;
+
+function formatAbsInt(absInt: number): string {
+  return new Intl.NumberFormat('ar-MA-u-nu-latn', {
+    maximumFractionDigits: 0,
+  }).format(absInt);
+}
 
 export function formatDH(amount: number): string {
   const safe = Number.isFinite(amount) ? amount : 0;
@@ -19,29 +27,55 @@ export function formatPct(value: number): string {
   return `${Math.round(safe)}%`;
 }
 
+export function formatNumber(amount: number): string {
+  const safe = Number.isFinite(amount) ? Math.round(amount) : 0;
+  const rounded = Object.is(safe, -0) ? 0 : safe;
+  if (rounded < 0) return `-${formatAbsInt(Math.abs(rounded))}`;
+  return formatAbsInt(rounded);
+}
+
 export function formatSignedNumber(amount: number): string {
-  const safe = Number.isFinite(amount) ? amount : 0;
-  const abs = Math.abs(Math.round(safe));
-  const formatted = new Intl.NumberFormat('ar-MA').format(abs);
-  if (safe > 0) return `+${formatted}`;
-  if (safe < 0) return `-${formatted}`;
-  return formatted;
+  const safe = Number.isFinite(amount) ? Math.round(amount) : 0;
+  const rounded = Object.is(safe, -0) ? 0 : safe;
+  if (rounded > 0) return `+${formatAbsInt(rounded)}`;
+  if (rounded < 0) return `-${formatAbsInt(Math.abs(rounded))}`;
+  return '0';
 }
 
 export function formatPlainNumber(amount: number): string {
-  const safe = Number.isFinite(amount) ? amount : 0;
-  return new Intl.NumberFormat('ar-MA').format(Math.abs(Math.round(safe)));
+  const safe = Number.isFinite(amount) ? Math.abs(Math.round(amount)) : 0;
+  return formatAbsInt(safe);
+}
+
+export function formatCompactAmount(amount: number): string {
+  const safe = Number.isFinite(amount) ? Math.round(amount) : 0;
+  const rounded = Object.is(safe, -0) ? 0 : safe;
+  if (Math.abs(rounded) < 1000) {
+    return formatNumber(rounded);
+  }
+  const absK = Math.abs(rounded) / 1000;
+  const kStr = Number.isInteger(absK)
+    ? String(absK)
+    : absK.toFixed(1).replace(/\.0$/, '');
+  const signedK = rounded < 0 ? `-${kStr}` : kStr;
+  return t(darija.common.thousandShort, { n: `\u2066${signedK}\u2069` });
+}
+
+export function formatCurrencyText(
+  amount: number,
+  opts: { signed?: boolean } = {}
+): string {
+  const num = opts.signed ? formatSignedNumber(amount) : formatNumber(amount);
+  return `\u2066${num}\u2069 ${darija.common.currency}`;
 }
 
 function normalizeDigits(input: string): string {
   let out = '';
   for (let i = 0; i < input.length; i++) {
     const code = input.charCodeAt(i);
-    // Arabic-Indic digits U+0660..U+0669
     if (code >= 0x0660 && code <= 0x0669) {
       out += String.fromCharCode(48 + (code - 0x0660));
     } else if (code >= 0x06f0 && code <= 0x06f9) {
-      // Eastern Arabic-Indic digits U+06F0..U+06F9
       out += String.fromCharCode(48 + (code - 0x06f0));
     } else {
       out += input[i];

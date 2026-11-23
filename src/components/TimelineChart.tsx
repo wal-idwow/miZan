@@ -69,14 +69,18 @@ export function TimelineChart({ monthly, currentBalance }: TimelineChartProps) {
                 <circle cx={x.toFixed(1)} cy={y.toFixed(1)} r={isMilestone ? 5 : 3.5} fill={isMilestone ? '#f59e0b' : '#10b981'} />
                 {isMilestone && (
                   <text x={x.toFixed(1)} y={y - 10} textAnchor="middle" fontSize="10" fill="#f59e0b" fontWeight="bold" fontFamily="system-ui, sans-serif">
-                    {m.isMilestone4 ? 'M4' : m.isMilestone8 ? 'M8' : 'M12'}
+                    {m.isMilestone4
+                      ? darija.vision.month4Short
+                      : m.isMilestone8
+                        ? darija.vision.month8Short
+                        : darija.vision.month12Short}
                   </text>
                 )}
               </g>
             );
           })}
         </svg>
-        <div className="absolute bottom-0 left-0 right-0 flex justify-between text-[10px] text-gray-400 px-1" style={{ bottom: '4px' }}>
+        <div className="absolute bottom-0 inset-x-0 flex justify-between text-[10px] text-gray-400 px-1" style={{ bottom: '4px' }}>
           {monthly.filter((_: ForecastResult['monthly'][0], i: number) => i % 3 === 0 || i === 11).map((m: ForecastResult['monthly'][0], idx: number) => (
             <span key={idx} className="text-center w-[25%]">{m.label.split(' ')[0]}</span>
           ))}

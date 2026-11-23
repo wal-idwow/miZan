@@ -87,7 +87,7 @@ export function Sheet({
               type="button"
               onClick={onClose}
               className="text-gray-400 hover:text-gray-600 text-2xl leading-none min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg"
-              aria-label={darija.a11y.closeModal}
+              aria-label={darija.a11y.closeDialog}
             >
               ×
             </button>

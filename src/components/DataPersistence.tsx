@@ -32,7 +32,7 @@ export function DataPersistence({
           className="p-4 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors text-start min-h-[44px]"
         >
           <div className="font-medium text-gray-900">{darija.data.exportButton}</div>
-          <div className="text-sm text-gray-500">JSON backup</div>
+          <div className="text-sm text-gray-500">{darija.data.exportFormat}</div>
         </button>
 
         <div className="relative">
@@ -86,7 +86,7 @@ export function DataPersistence({
           onClearAll();
           setClearConfirm(false);
         }}
-        title={darija.data.clearAll}
+        title={darija.data.clearConfirmTitle}
         message={darija.data.clearConfirm}
         confirmText={darija.common.yes}
         cancelText={darija.common.no}

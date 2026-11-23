@@ -20,7 +20,6 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   }
 
   componentDidCatch(error: Error, info: ErrorInfo): void {
-    // Log error name/component stack only; never print user financial data
     console.error('Render failure:', error.name, info.componentStack?.slice(0, 200));
   }
 
@@ -41,22 +40,26 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
           className="min-h-screen bg-gray-50 flex items-center justify-center p-6"
         >
           <div className="bg-white rounded-2xl border p-6 max-w-md w-full space-y-4 text-center shadow-sm">
-            <h1 className="text-lg font-bold text-gray-900">{darija.app.name}</h1>
-            <p className="text-sm text-gray-600">{darija.errorBoundary.title}</p>
+            <h1 className="text-lg font-bold text-gray-900 flex items-center justify-center gap-1.5">
+              <span>{darija.app.name}</span>
+              <span aria-hidden="true">—</span>
+              <bdi dir="ltr">{darija.app.brandLatin}</bdi>
+            </h1>
+            <p className="text-sm text-gray-600">{darija.common.errorReload}</p>
             <div className="flex flex-col gap-2">
               <button
                 type="button"
                 onClick={() => window.location.reload()}
                 className="w-full py-3 px-4 bg-emerald-600 text-white rounded-lg font-medium hover:bg-emerald-700 min-h-[44px]"
               >
-                {darija.errorBoundary.reload}
+                {darija.common.reloadPage}
               </button>
               <button
                 type="button"
                 onClick={this.handleExportRaw}
                 className="w-full py-3 px-4 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 min-h-[44px]"
               >
-                {darija.errorBoundary.exportRaw}
+                {darija.data.exportRaw}
               </button>
             </div>
           </div>

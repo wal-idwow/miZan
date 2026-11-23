@@ -1,8 +1,8 @@
 // miZan — Fixed Bills & Variable Buckets (Budget Sections)
 import { darija } from '../i18n/darija';
-import { formatDH } from '../utils/format';
 import type { BaselineInput } from '../types/finance';
 import { Field } from './ui/Field';
+import { Money } from './ui/Money';
 import { MoneyInput } from './ui/MoneyInput';
 
 interface BillsSectionProps {
@@ -62,7 +62,7 @@ function BillsSection({ bills, onChange }: BillsSectionProps) {
       <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
         <span className="text-gray-600">{darija.bills.total}</span>
         <span className="text-xl font-bold text-gray-900">
-          {formatDH(bills.rent + bills.utilities + bills.subscriptions + bills.other)}
+          <Money amount={bills.rent + bills.utilities + bills.subscriptions + bills.other} />
         </span>
       </div>
     </section>
@@ -126,7 +126,7 @@ function BucketsSection({ buckets, onChange }: BucketsSectionProps) {
       <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
         <span className="text-gray-600">{darija.buckets.total}</span>
         <span className="text-xl font-bold text-gray-900">
-          {formatDH(buckets.groceries + buckets.transport + buckets.leisure + buckets.other)}
+          <Money amount={buckets.groceries + buckets.transport + buckets.leisure + buckets.other} />
         </span>
       </div>
     </section>

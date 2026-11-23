@@ -28,7 +28,7 @@ export function Toast({ toast, onDismiss }: ToastProps) {
 
   return (
     <div
-      className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-4 sm:w-96 z-50 animate-slide-down"
+      className="fixed bottom-4 inset-x-4 sm:inset-x-auto sm:end-4 sm:w-96 z-50 animate-slide-down"
       role="status"
       aria-live="polite"
     >

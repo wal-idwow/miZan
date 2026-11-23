@@ -1,8 +1,9 @@
 // miZan — Custom Payment Modal (mount-on-open draft state via Sheet)
 import { useState } from 'react';
 import { darija } from '../i18n/darija';
-import { formatDH } from '../utils/format';
+import { formatCurrencyText } from '../utils/format';
 import { Field } from './ui/Field';
+import { Money } from './ui/Money';
 import { MoneyInput } from './ui/MoneyInput';
 import { Sheet } from './ui/Sheet';
 
@@ -33,8 +34,8 @@ function CustomPaymentForm({
       label: darija.items.progress.monthlySlice,
       value: Math.min(remainingAmount, Math.ceil(monthlySlice)),
     },
-    { label: 'نصف الباقي', value: Math.ceil(remainingAmount / 2) },
-    { label: 'كل الباقي', value: remainingAmount },
+    { label: darija.items.progress.halfRemaining, value: Math.ceil(remainingAmount / 2) },
+    { label: darija.items.progress.allRemaining, value: remainingAmount },
   ].filter(
     (q, idx, arr) =>
       q.value > 0 &&
@@ -61,17 +62,21 @@ function CustomPaymentForm({
       <div className="grid grid-cols-2 gap-2 text-sm">
         <div className="p-2.5 bg-gray-50 rounded-lg text-center">
           <p className="text-xs text-gray-500">{darija.items.progress.monthlySlice}</p>
-          <p className="font-medium text-gray-900">{formatDH(monthlySlice)}</p>
+          <p className="font-medium text-gray-900">
+            <Money amount={monthlySlice} />
+          </p>
         </div>
         <div className="p-2.5 bg-gray-50 rounded-lg text-center">
           <p className="text-xs text-gray-500">{darija.items.progress.remaining}</p>
-          <p className="font-medium text-gray-900">{formatDH(remainingAmount)}</p>
+          <p className="font-medium text-gray-900">
+            <Money amount={remainingAmount} />
+          </p>
         </div>
       </div>
 
       {quickAmounts.length > 0 ? (
         <div>
-          <p className="text-xs text-gray-500 mb-2">مبالغ سريعة:</p>
+          <p className="text-xs text-gray-500 mb-2">{darija.items.progress.quickAmounts}</p>
           <div className="flex gap-2 flex-wrap">
             {quickAmounts.map(q => (
               <button
@@ -91,7 +96,7 @@ function CustomPaymentForm({
         </div>
       ) : null}
 
-      <Field label={`${darija.common.add} ${darija.common.currencyShort}`}>
+      <Field label={darija.items.progress.addPaymentHint}>
         {({ id }) => (
           <MoneyInput
             id={id}
@@ -99,7 +104,7 @@ function CustomPaymentForm({
             onChange={setAmount}
             min={0}
             max={Math.max(0, remainingAmount)}
-            placeholder={formatDH(remainingAmount)}
+            placeholder={formatCurrencyText(remainingAmount)}
             className="text-2xl text-center min-h-[48px]"
             autoFocus
           />

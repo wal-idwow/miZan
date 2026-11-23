@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 import { darija } from './i18n/darija';
+import { t } from './i18n/t';
 import { usePersistentFinance } from './hooks/usePersistentFinance';
 import { useToast } from './hooks/useToast';
 import { toStoredData } from './state/financeReducer';
@@ -14,6 +15,7 @@ import {
   parseImportFile,
   savePreImportSnapshot,
 } from './storage/storage';
+import { formatCurrencyText } from './utils/format';
 import { Header } from './components/Header';
 import { StorageStatusBanner } from './components/StorageStatusBanner';
 import { TopSummary } from './components/TopSummary';
@@ -72,11 +74,18 @@ export default function App() {
     const existing = state.items.find(i => i.id === id);
     if (!existing || amount <= 0) return;
     const prevSaved = existing.alreadySaved;
+    const appliedAmount = Math.min(amount, Math.max(0, existing.totalAmount - prevSaved));
     dispatch({ type: 'ADD_PAYMENT', id, amount });
-    showToast(darija.common.paymentAdded, {
-      label: darija.common.undo,
-      onAction: () => dispatch({ type: 'RESTORE_ITEM_SAVED', id, alreadySaved: prevSaved }),
-    });
+    showToast(
+      t(darija.items.progress.paymentToast, {
+        amount: formatCurrencyText(appliedAmount),
+        name: existing.name,
+      }),
+      {
+        label: darija.common.undo,
+        onAction: () => dispatch({ type: 'RESTORE_ITEM_SAVED', id, alreadySaved: prevSaved }),
+      }
+    );
   }, [state.items, dispatch, showToast]);
 
   return (

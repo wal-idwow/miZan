@@ -1,9 +1,9 @@
-// miZan — What-If Simulator Panel
+// miZan — Scenario Simulator Panel
 import { darija } from '../i18n/darija';
-import { formatSignedNumber } from '../utils/format';
 import type { WhatIfScenario } from '../types/finance';
 import type { WhatIfDelta } from '../engine/forecast';
 import { Field } from './ui/Field';
+import { Money } from './ui/Money';
 import { MoneyInput } from './ui/MoneyInput';
 
 interface WhatIfPanelProps {
@@ -40,18 +40,15 @@ export function WhatIfPanel({
           type="button"
           onClick={onToggle}
           className="text-sm text-emerald-600 hover:underline min-h-[44px] shrink-0"
-          aria-label={isOpen ? 'طمس محاكي السيناريو' : 'إظهار محاكي السيناريو'}
+          aria-expanded={isOpen}
         >
-          {isOpen ? 'طمس' : 'إظهار'} {darija.whatIf.livePreview}
+          {isOpen ? darija.whatIf.hide : darija.whatIf.show}
         </button>
       </div>
 
       {isOpen ? (
         <div className="space-y-4 animate-slide-down">
-          <Field
-            label={`${darija.whatIf.extraSaving} (${darija.common.perMonth})`}
-            hint={darija.whatIf.extraSavingHint}
-          >
+          <Field label={darija.whatIf.extraSaving} hint={darija.whatIf.extraSavingHint}>
             {({ id, ariaDescribedBy }) => (
               <MoneyInput
                 id={id}
@@ -64,10 +61,7 @@ export function WhatIfPanel({
             )}
           </Field>
 
-          <Field
-            label={`${darija.whatIf.extraExpense} (${darija.common.perMonth})`}
-            hint={darija.whatIf.extraExpenseHint}
-          >
+          <Field label={darija.whatIf.extraExpense} hint={darija.whatIf.extraExpenseHint}>
             {({ id, ariaDescribedBy }) => (
               <MoneyInput
                 id={id}
@@ -106,28 +100,31 @@ export function WhatIfPanel({
                 <div className="p-3 bg-white rounded-lg border">
                   <div className="text-xs text-gray-500">{darija.whatIf.month4Impact}</div>
                   <div
-                    className={`text-xl font-bold ${delta.deltas.month4 >= 0 ? 'text-green-600' : 'text-red-600'} inline-block`}
-                    dir="ltr"
+                    className={`text-xl font-bold ${
+                      delta.deltas.month4 >= 0 ? 'text-green-600' : 'text-red-600'
+                    }`}
                   >
-                    {formatSignedNumber(delta.deltas.month4)}
+                    <Money amount={delta.deltas.month4} signed showCurrency={false} />
                   </div>
                 </div>
                 <div className="p-3 bg-white rounded-lg border">
                   <div className="text-xs text-gray-500">{darija.whatIf.month8Impact}</div>
                   <div
-                    className={`text-xl font-bold ${delta.deltas.month8 >= 0 ? 'text-green-600' : 'text-red-600'} inline-block`}
-                    dir="ltr"
+                    className={`text-xl font-bold ${
+                      delta.deltas.month8 >= 0 ? 'text-green-600' : 'text-red-600'
+                    }`}
                   >
-                    {formatSignedNumber(delta.deltas.month8)}
+                    <Money amount={delta.deltas.month8} signed showCurrency={false} />
                   </div>
                 </div>
                 <div className="p-3 bg-white rounded-lg border">
                   <div className="text-xs text-gray-500">{darija.whatIf.month12Impact}</div>
                   <div
-                    className={`text-xl font-bold ${delta.deltas.month12 >= 0 ? 'text-green-600' : 'text-red-600'} inline-block`}
-                    dir="ltr"
+                    className={`text-xl font-bold ${
+                      delta.deltas.month12 >= 0 ? 'text-green-600' : 'text-red-600'
+                    }`}
                   >
-                    {formatSignedNumber(delta.deltas.month12)}
+                    <Money amount={delta.deltas.month12} signed showCurrency={false} />
                   </div>
                 </div>
               </div>

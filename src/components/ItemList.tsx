@@ -1,7 +1,7 @@
-// miZan — Goals, Shocks & Debts List with Progress Bars
+// miZan — Goals, Shocks & Debts List
 import { useState } from 'react';
 import { darija } from '../i18n/darija';
-import { formatDH } from '../utils/format';
+import { formatMonthsRemaining, t } from '../i18n/t';
 import { addMonthsToYearMonth, buildTargetMonthOptions } from '../utils/dates';
 import { generateId } from '../utils/ids';
 import type { ForecastResult, ItemCategory, StoredItem } from '../types/finance';
@@ -9,6 +9,7 @@ import { ProgressBar } from './ProgressBar';
 import { CustomPaymentModal } from './CustomPaymentModal';
 import { ConfirmDialog } from './ConfirmDialog';
 import { Field } from './ui/Field';
+import { Money } from './ui/Money';
 import { MoneyInput } from './ui/MoneyInput';
 
 interface ItemListProps {
@@ -51,7 +52,7 @@ export function ItemList({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<ItemFormDraft>(() => createEmptyDraft());
   const [paymentItem, setPaymentItem] = useState<StoredItem | null>(null);
-  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   const monthOptions = buildTargetMonthOptions(
     referenceDate,
@@ -121,11 +122,14 @@ export function ItemList({
 
   const handleDeleteConfirm = (id: string) => {
     onDelete(id);
-    setDeleteConfirm(null);
+    setDeleteConfirmId(null);
   };
 
-  const paymentProgress = paymentItem
+  const selectedProgress = paymentItem
     ? forecast.itemProgress.find(p => p.item.id === paymentItem.id)
+    : undefined;
+  const deleteTarget = deleteConfirmId
+    ? items.find(i => i.id === deleteConfirmId)
     : undefined;
 
   return (
@@ -210,10 +214,11 @@ export function ItemList({
             </Field>
           </div>
 
-          <Field label={darija.items.form.targetMonth}>
-            {({ id }) => (
+          <Field label={darija.items.form.targetMonth} hint={darija.items.form.targetMonthHint}>
+            {({ id, ariaDescribedBy }) => (
               <select
                 id={id}
+                aria-describedby={ariaDescribedBy}
                 value={form.targetDate}
                 onChange={e => setForm(prev => ({ ...prev, targetDate: e.target.value }))}
                 className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 min-h-[44px]"
@@ -269,9 +274,6 @@ export function ItemList({
               <div className="flex items-start justify-between gap-4 mb-3">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1 flex-wrap">
-                    <span className="text-lg" aria-hidden="true">
-                      {item.category === 'goal' ? '🎯' : item.category === 'debt' ? '💳' : '⚡'}
-                    </span>
                     <h4 className="font-semibold text-gray-900 truncate">{item.name}</h4>
                     <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 whitespace-nowrap">
                       {item.category === 'goal'
@@ -291,27 +293,30 @@ export function ItemList({
                       </span>
                     ) : null}
                   </div>
-                  <p className="text-sm text-gray-500">
-                    {darija.items.progress.monthlySlice}: {formatDH(monthlySlice)} |{' '}
-                    {darija.items.progress.monthsLeft}: {monthsRemaining}
+                  <p className="text-sm text-gray-500 flex flex-wrap items-center gap-2">
+                    <span>
+                      {darija.items.progress.monthlySlice}: <Money amount={monthlySlice} />
+                    </span>
+                    <span aria-hidden="true">·</span>
+                    <span>{isCompleted ? darija.items.progress.completed : formatMonthsRemaining(monthsRemaining)}</span>
                   </p>
                 </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
+                <div className="flex items-center gap-1 flex-shrink-0">
                   <button
                     type="button"
                     onClick={() => handleEdit(item)}
-                    className="p-2 text-gray-400 hover:text-gray-600 min-h-[44px] min-w-[44px] flex items-center justify-center"
-                    aria-label={`تعديل ${item.name}`}
+                    className="px-2.5 py-2 text-xs font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg min-h-[44px]"
+                    aria-label={t(darija.a11y.editItem, { name: item.name })}
                   >
-                    ✏️
+                    {darija.common.edit}
                   </button>
                   <button
                     type="button"
-                    onClick={() => setDeleteConfirm(item.id)}
-                    className="p-2 text-gray-400 hover:text-red-600 min-h-[44px] min-w-[44px] flex items-center justify-center"
-                    aria-label={`حذف ${item.name}`}
+                    onClick={() => setDeleteConfirmId(item.id)}
+                    className="px-2.5 py-2 text-xs font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg min-h-[44px]"
+                    aria-label={t(darija.a11y.deleteItem, { name: item.name })}
                   >
-                    🗑️
+                    {darija.common.delete}
                   </button>
                 </div>
               </div>
@@ -321,7 +326,7 @@ export function ItemList({
                 saved={item.alreadySaved}
                 total={item.totalAmount}
                 monthlySlice={monthlySlice}
-                label={`${item.name}: ${Math.round(progress?.progressPct || 0)}%`}
+                itemName={item.name}
               />
 
               <div className="flex gap-3 mt-3 pt-3 border-t border-gray-100">
@@ -334,7 +339,7 @@ export function ItemList({
                   }}
                   className="flex-1 py-2 px-3 bg-emerald-50 text-emerald-700 rounded-lg text-sm font-medium hover:bg-emerald-100 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1 min-h-[44px]"
                 >
-                  {darija.items.progress.addPayment}
+                  {darija.items.progress.addMonthly}
                 </button>
                 <button
                   type="button"
@@ -342,7 +347,7 @@ export function ItemList({
                   onClick={() => setPaymentItem(item)}
                   className="flex-1 py-2 px-3 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
                 >
-                  {darija.common.add} {darija.common.currencyShort}
+                  {darija.items.progress.addCustom}
                 </button>
               </div>
             </article>
@@ -358,17 +363,17 @@ export function ItemList({
         remainingAmount={
           paymentItem ? Math.max(0, paymentItem.totalAmount - paymentItem.alreadySaved) : 0
         }
-        monthlySlice={paymentProgress?.monthlySlice || 0}
+        monthlySlice={selectedProgress?.monthlySlice || 0}
       />
 
       <ConfirmDialog
-        isOpen={deleteConfirm !== null}
-        onClose={() => setDeleteConfirm(null)}
+        isOpen={deleteConfirmId !== null}
+        onClose={() => setDeleteConfirmId(null)}
         onConfirm={() => {
-          if (deleteConfirm) handleDeleteConfirm(deleteConfirm);
+          if (deleteConfirmId) handleDeleteConfirm(deleteConfirmId);
         }}
-        title={darija.items.form.delete}
-        message={darija.items.form.deleteConfirm}
+        title={darija.items.form.deleteTitle}
+        message={t(darija.items.form.deleteConfirm, { name: deleteTarget?.name ?? '' })}
         confirmText={darija.items.form.delete}
         cancelText={darija.common.cancel}
         variant="destructive"
