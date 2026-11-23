@@ -51,28 +51,40 @@ export function HeroBalanceCard({
         aria-label={darija.checkin.currentBalance}
         className="bg-linear-to-bl from-brand-700 to-brand-600 text-white rounded-2xl p-5 sm:p-6 shadow-raised space-y-4"
       >
-        <div className="flex items-start justify-between gap-3">
-          <div className="space-y-1">
+        <div className="space-y-1.5">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="text-sm text-white/80 font-medium">{darija.checkin.currentBalance}</p>
-            <p className="text-3xl sm:text-4xl font-bold tracking-tight">
-              <Money amount={currentBalance} />
-            </p>
+
+            <div className="flex items-center gap-1.5 shrink-0">
+              {!showFullPrivacy ? (
+                <span
+                  className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-white/15 text-white/95"
+                  title={darija.privacy.badge}
+                  aria-label={darija.privacy.badge}
+                >
+                  <ShieldCheck size={15} strokeWidth={1.75} aria-hidden="true" />
+                </span>
+              ) : null}
+              {relativeDate ? (
+                <span
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium shrink-0 ${
+                    isStale
+                      ? 'bg-warning-50 text-warning-600'
+                      : 'bg-white/15 text-white/95'
+                  }`}
+                >
+                  {isStale ? (
+                    <AlertTriangle size={14} strokeWidth={1.75} aria-hidden="true" />
+                  ) : null}
+                  <span>{t(darija.checkin.lastUpdated, { when: relativeDate })}</span>
+                </span>
+              ) : null}
+            </div>
           </div>
 
-          {relativeDate ? (
-            <span
-              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium shrink-0 ${
-                isStale
-                  ? 'bg-warning-50 text-warning-600'
-                  : 'bg-white/15 text-white/95'
-              }`}
-            >
-              {isStale ? (
-                <AlertTriangle size={14} strokeWidth={1.75} aria-hidden="true" />
-              ) : null}
-              <span>{t(darija.checkin.lastUpdated, { when: relativeDate })}</span>
-            </span>
-          ) : null}
+          <p className="text-3xl sm:text-4xl font-bold tracking-tight">
+            <Money amount={currentBalance} />
+          </p>
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-white/15">
@@ -100,16 +112,18 @@ export function HeroBalanceCard({
         </div>
       </section>
 
-      <div className="flex justify-start">
-        <div
-          className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-card border border-line text-xs text-ink-600 shadow-card"
-          title={darija.privacy.badge}
-          aria-label={darija.privacy.badge}
-        >
-          <ShieldCheck size={15} strokeWidth={1.75} className="text-brand-600 shrink-0" aria-hidden="true" />
-          {showFullPrivacy ? <span>{darija.privacy.badge}</span> : null}
+      {showFullPrivacy ? (
+        <div className="flex justify-start">
+          <div
+            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-card border border-line text-xs text-ink-600 shadow-card"
+            title={darija.privacy.badge}
+            aria-label={darija.privacy.badge}
+          >
+            <ShieldCheck size={15} strokeWidth={1.75} className="text-brand-600 shrink-0" aria-hidden="true" />
+            <span>{darija.privacy.badge}</span>
+          </div>
         </div>
-      </div>
+      ) : null}
     </div>
   );
 }

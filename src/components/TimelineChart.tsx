@@ -425,8 +425,17 @@ export function TimelineChart({
             width={plotW}
             height={plotH}
             fill="transparent"
+            role="slider"
             tabIndex={0}
             aria-label={darija.vision.timelineAriaLabel}
+            aria-valuemin={0}
+            aria-valuemax={12}
+            aria-valuenow={activeIdx ?? highlightedIdx ?? 0}
+            aria-valuetext={
+              focusedPoint
+                ? `${focusedPoint.label}: ${formatCurrencyText(focusedPoint.balance)}`
+                : undefined
+            }
             style={{ touchAction: 'pan-y', outline: 'none' }}
             onPointerDown={e => snapToClientX(e.clientX)}
             onPointerMove={e => {

@@ -3,7 +3,6 @@ import { useEffect, useRef, useState } from 'react';
 import { AlertTriangle, CheckCircle2, MinusCircle } from 'lucide-react';
 import { darija } from '../i18n/darija';
 import { t } from '../i18n/t';
-import { formatCurrencyText } from '../utils/format';
 import type { KeyDriverFact, MilestoneCard } from '../types/finance';
 import { Money } from './ui/Money';
 
@@ -135,11 +134,6 @@ export function MilestoneCards({
               type="button"
               onClick={() => onSelectMilestone(ms.month)}
               aria-pressed={isHighlighted}
-              aria-label={t(darija.a11y.milestoneCard, {
-                month: ms.month,
-                balance: formatCurrencyText(ms.projectedBalance),
-                status: cfg.text,
-              })}
               className={`w-[82%] shrink-0 snap-center sm:w-auto text-start bg-card rounded-2xl p-4 shadow-card border border-line border-s-4 ${cfg.stripe} flex flex-col gap-3 transition-all ${
                 isHighlighted ? 'ring-2 ring-brand-600 shadow-raised' : 'hover:border-brand-600/40'
               }`}

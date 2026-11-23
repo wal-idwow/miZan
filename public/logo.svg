@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" fill="none">
+  <rect width="512" height="512" rx="112" fill="#0F766E" />
+  <rect x="24" y="24" width="464" height="464" rx="92" stroke="#C8A24A" stroke-opacity="0.28" stroke-width="4" />
+  <!-- Central pillar and base -->
+  <line x1="256" y1="128" x2="256" y2="376" stroke="#FFFFFF" stroke-width="22" stroke-linecap="round" />
+  <line x1="176" y1="376" x2="336" y2="376" stroke="#FFFFFF" stroke-width="22" stroke-linecap="round" />
+  <!-- Balance beam -->
+  <line x1="132" y1="184" x2="380" y2="184" stroke="#FFFFFF" stroke-width="20" stroke-linecap="round" />
+  <!-- Left pan -->
+  <path d="M132 184 L96 284 L168 284 Z" stroke="#FFFFFF" stroke-width="14" stroke-linejoin="round" fill="none" />
+  <path d="M90 284 C90 314 174 314 174 284 Z" fill="#C8A24A" />
+  <!-- Right pan -->
+  <path d="M380 184 L344 284 L416 284 Z" stroke="#FFFFFF" stroke-width="14" stroke-linejoin="round" fill="none" />
+  <path d="M338 284 C338 314 422 314 422 284 Z" fill="#C8A24A" />
+  <!-- Top saffron pivot -->
+  <circle cx="256" cy="144" r="22" fill="#C8A24A" stroke="#FFFFFF" stroke-width="8" />
+</svg>

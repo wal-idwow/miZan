@@ -20,6 +20,8 @@ interface DataScreenProps {
   itemsCount: number;
   hasUserData: boolean;
   lastExportAt: number | null;
+  canInstall: boolean;
+  onInstallApp: () => void;
   onExport: () => void;
   onImportConfirmed: (data: StoredData) => void;
   onImportError: (message: string) => void;
@@ -31,6 +33,8 @@ export function DataScreen({
   itemsCount,
   hasUserData,
   lastExportAt,
+  canInstall,
+  onInstallApp,
   onExport,
   onImportConfirmed,
   onImportError,
@@ -147,6 +151,27 @@ export function DataScreen({
           </label>
         </div>
       </section>
+
+      {canInstall ? (
+        <section className="bg-card rounded-2xl border border-line p-5 shadow-card flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 rounded-xl bg-brand-50 text-brand-700 flex items-center justify-center shrink-0">
+              <Download size={18} strokeWidth={1.75} aria-hidden="true" />
+            </div>
+            <div className="min-w-0">
+              <h3 className="text-sm font-bold text-ink-900">{darija.pwa.installTitle}</h3>
+              <p className="text-xs text-ink-600">{darija.pwa.installDesc}</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onInstallApp}
+            className="px-4 py-2.5 bg-brand-600 text-white rounded-xl text-xs font-semibold hover:bg-brand-700 min-h-[44px] shrink-0"
+          >
+            {darija.pwa.installButton}
+          </button>
+        </section>
+      ) : null}
 
       <section className="bg-card rounded-2xl border border-line p-5 shadow-card space-y-3">
         <div className="flex items-start gap-3">

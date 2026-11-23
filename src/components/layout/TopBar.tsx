@@ -86,15 +86,17 @@ export function TopBar({ activeTab, onNavigate, onQuickCheckin }: TopBarProps) {
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={onQuickCheckin}
-          className="px-3.5 py-2 bg-brand-600 text-white rounded-xl text-sm font-medium hover:bg-brand-700 transition-colors flex items-center gap-2 min-h-[44px] min-w-[44px] justify-center shrink-0"
-          aria-label={darija.nav.quickCheckin}
-        >
-          <RefreshCw size={18} strokeWidth={1.75} aria-hidden="true" />
-          <span className="hidden sm:inline">{darija.nav.quickCheckin}</span>
-        </button>
+        {activeTab !== 'overview' ? (
+          <button
+            type="button"
+            onClick={onQuickCheckin}
+            className="px-3.5 py-2 bg-brand-600 text-white rounded-xl text-sm font-medium hover:bg-brand-700 transition-colors flex items-center gap-2 min-h-[44px] min-w-[44px] justify-center shrink-0"
+            aria-label={darija.nav.quickCheckin}
+          >
+            <RefreshCw size={18} strokeWidth={1.75} aria-hidden="true" />
+            <span className="hidden sm:inline">{darija.nav.quickCheckin}</span>
+          </button>
+        ) : null}
       </div>
     </header>
   );

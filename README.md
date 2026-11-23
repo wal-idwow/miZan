@@ -1,32 +1,39 @@
-# React + TypeScript + Vite
+# ميزان — miZan
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+> تحكّم ففلوسك، وشوف لقدّام — Personal 12-month cashflow forecasting in Moroccan Darija (`ar-MA`, RTL).
 
-Currently, two official plugins are available:
+Live app: **https://mizan.wliddev.com**
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Core Principles
 
-## React Compiler
+- **100% Local-First Privacy:** Every balance, salary, bill, goal, and debt stays strictly on your device in `localStorage`. Zero backend, zero accounts, zero analytics, zero third-party network calls (enforced by CSP `connect-src 'self'`).
+- **Installable Offline PWA:** Installs cleanly on Android Chrome, iOS Safari, and Desktop Chrome with Workbox precaching and prompt-to-reload updates (`registerType: 'prompt'`).
+- **Pure 12-Month Forecast Engine:** Deterministic cashflow projection with 4/8/12-month milestones, invariant monthly slices for goals/shocks/debts, Month-0 settlement for overdue unpaid balances, and isolated scenario simulation.
+- **Resilient JSON Backup & Restore:** Schema-versioned (`v2`) backups with strict runtime validation, automatic `v1 → v2` migration, corrupt-storage quarantine (`mizan-data.recovered.<ts>`), and pre-import undo snapshots.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Backup & Restore
 
-## Expanding the Oxlint configuration
+1. Open the **البيانات** tab (`#/data`).
+2. Tap **نزّل النسخة** (or **بارطاجي النسخة** on mobile) to save a timestamped `mizan-backup-YYYY-MM-DD.json` file.
+3. To restore on any device, tap **اختار ملف**, review the confirmation preview, and confirm. An undo toast restores your previous data if needed.
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
+## Development
 
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+Requires **Node.js ≥ 22**.
+
+```bash
+npm install
+npm run dev                  # Start Vite dev server
+npm test                     # Run Vitest unit & schema suites
+npm run lint                 # Run Oxlint
+npm run build                # Typecheck (tsc -b) + production PWA build
+npm run preview              # Preview production build locally
+npm run generate-pwa-assets  # Regenerate PWA icons from public/logo.svg
+npm run test:e2e             # Run Playwright viewport, axe, offline & installability specs
+npm run lhci                 # Run Lighthouse CI mobile audit against dist/
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+## Deployment (Vercel)
+
+- Production domain: `mizan.wliddev.com` (`CNAME mizan -> cname.vercel-dns.com`).
+- `vercel.json` configures immutable `/assets/*` caching, `no-cache` for `/sw.js`, `/manifest.webmanifest`, and `/index.html`, and strict security headers (`CSP`, `HSTS`, `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer`, `COOP`).

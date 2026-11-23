@@ -1,0 +1,32 @@
+name: CI — miZan V1 Quality Gates
+
+on:
+  push:
+    branches: [main, feat/v1-production]
+  pull_request:
+    branches: [main]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run Playwright E2E, axe & offline specs
+        run: npm run test:e2e
+
+      - name: Run Lighthouse CI
+        run: npm run lhci
