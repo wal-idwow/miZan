@@ -1,0 +1,18 @@
+{
+  "__proto__": { "polluted": true },
+  "constructor": { "prototype": { "polluted2": true } },
+  "extraUnknown": "strip-me",
+  "schemaVersion": 2,
+  "baseline": {
+    "fixedSalary": 9000,
+    "sideIncome": 0,
+    "currentBalance": 2000,
+    "fixedBills": { "rent": 3000, "utilities": 400, "subscriptions": 100, "other": 0 },
+    "variableBuckets": { "groceries": 1800, "transport": 400, "leisure": 200, "other": 100 }
+  },
+  "items": [],
+  "whatIf": {},
+  "balanceUpdatedAt": null,
+  "meta": { "lastExportAt": null },
+  "updatedAt": 1700000000000
+}

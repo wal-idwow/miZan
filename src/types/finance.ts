@@ -1,5 +1,5 @@
 // miZan — Core Finance Types
-// All amounts in MAD (DH). Months are 0-indexed from "current month".
+// All amounts in MAD (DH). Engine months are 0-indexed from "current month".
 
 export type ItemCategory = 'goal' | 'shock' | 'debt';
 
@@ -10,6 +10,16 @@ export interface FinanceItem {
   totalAmount: number;        // Total target amount (DH)
   alreadySaved: number;       // Amount already saved/paid (DH)
   targetMonth: number;        // 0 = current month, 1 = next month, ..., 11 = month 11, 12+ = beyond horizon
+  createdAt: number;          // Unix ms
+}
+
+export interface StoredItem {
+  id: string;
+  name: string;
+  category: ItemCategory;
+  totalAmount: number;        // Total target amount (DH)
+  alreadySaved: number;       // Amount already saved/paid (DH)
+  targetDate: string;         // Absolute 'YYYY-MM'
   createdAt: number;          // Unix ms
 }
 
@@ -38,7 +48,7 @@ export interface BaselineInput {
 export interface WhatIfScenario {
   // Temporary adjustments for simulation only
   extraMonthlySaving?: number;     // e.g., +500 DH/month saved
-  extraMonthlyExpense?: number;    // e.g., -3000 DH risk/expense
+  extraMonthlyExpense?: number;    // e.g., 3000 DH risk/expense
   variableSpendingCutPct?: number; // e.g., 10% cut on variable buckets
 }
 
@@ -69,12 +79,21 @@ export interface ItemSettlement {
   wasReserved: boolean;            // True if covered by prior reservations
 }
 
+export type KeyDriverFact =
+  | { kind: 'surplus'; amount: number }
+  | { kind: 'deficit'; amount: number }
+  | { kind: 'reserved'; amount: number }
+  | { kind: 'settling'; names: string[] }
+  | { kind: 'stable' }
+  | { kind: 'noData' };
+
 export interface MilestoneCard {
   month: 4 | 8 | 12;
   label: string;
   projectedBalance: number;
   status: 'surplus' | 'deficit' | 'break-even';
   keyDrivers: string[];            // Human-readable summary for UI
+  driverFacts?: KeyDriverFact[];   // Structured facts for UI rendering
 }
 
 export interface ItemProgress {
@@ -84,6 +103,7 @@ export interface ItemProgress {
   progressPct: number;             // 0-100 (alreadySaved / totalAmount)
   savedAmount: number;
   remainingAmount: number;
+  isOverdue: boolean;
 }
 
 export interface ForecastResult {
@@ -98,11 +118,25 @@ export interface ForecastResult {
   finalBalanceMonth12: number;
 }
 
-export interface StoredData {
-  schemaVersion: number;
+export interface StoredMeta {
+  lastExportAt: number | null;
+}
+
+export interface StoredDataV1 {
+  schemaVersion: 1;
   baseline: BaselineInput;
   items: FinanceItem[];
   whatIf: WhatIfScenario;
+  updatedAt: number;
+}
+
+export interface StoredData {
+  schemaVersion: 2;
+  baseline: BaselineInput;
+  items: StoredItem[];
+  whatIf: WhatIfScenario;
+  balanceUpdatedAt: number | null;
+  meta: StoredMeta;
   updatedAt: number;
 }
 
@@ -117,4 +151,4 @@ export const EMPTY_BASELINE: BaselineInput = {
 export const EMPTY_WHAT_IF: WhatIfScenario = {};
 
 export const STORAGE_KEY = 'mizan-data';
-export const CURRENT_SCHEMA_VERSION = 1;
+export const CURRENT_SCHEMA_VERSION = 2;

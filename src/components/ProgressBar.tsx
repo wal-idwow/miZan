@@ -21,7 +21,10 @@ export function ProgressBar({ pct, saved, total, monthlySlice, label }: Progress
       </div>
       <div className="h-3 bg-gray-200 rounded-full overflow-hidden relative">
         <div className="h-full bg-green-500 transition-all duration-500" style={{ width: `${clampedPct}%` }} />
-        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-red-500/20 to-transparent pointer-events-none" style={{ width: `${100 - clampedPct}%`, left: `${clampedPct}%` }} />
+        <div
+          className="absolute inset-y-0 bg-linear-to-r from-transparent via-red-500/20 to-transparent pointer-events-none"
+          style={{ width: `${100 - clampedPct}%`, insetInlineStart: `${clampedPct}%` }}
+        />
       </div>
       <div className="flex justify-between text-xs mt-1">
         <span>{darija.items.progress.monthlySlice}: {formatDH(monthlySlice)}</span>

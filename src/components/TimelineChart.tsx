@@ -1,4 +1,5 @@
 // miZan — Timeline Chart (12-month balance projection)
+import { useId } from 'react';
 import { darija } from '../i18n/darija';
 import type { ForecastResult } from '../types/finance';
 
@@ -8,6 +9,7 @@ interface TimelineChartProps {
 }
 
 export function TimelineChart({ monthly, currentBalance }: TimelineChartProps) {
+  const gradientId = useId();
   const maxBalance = Math.max(...monthly.map(m => m.endingBalance), currentBalance, 0);
   const minBalance = Math.min(...monthly.map(m => m.endingBalance), currentBalance, 0);
   const range = maxBalance - minBalance || 1;
@@ -36,14 +38,14 @@ export function TimelineChart({ monthly, currentBalance }: TimelineChartProps) {
       <div className="relative" style={{ width: '100%', height: viewBoxHeight }}>
         <svg viewBox={`0 0 ${viewBoxWidth} ${viewBoxHeight}`} className="w-full h-auto" preserveAspectRatio="xMidYMid meet">
           <defs>
-            <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
+            <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor="#10b981" stopOpacity="0.3" />
               <stop offset="100%" stopColor="#10b981" stopOpacity="0" />
             </linearGradient>
           </defs>
           {/* Closed area fill */}
           <polygon
-            fill="url(#areaGradient)"
+            fill={`url(#${gradientId})`}
             points={areaPoints}
           />
           {/* Zero baseline reference */}

@@ -12,7 +12,10 @@ import type {
   ItemSettlement,
   FixedBills,
   VariableBuckets,
+  KeyDriverFact,
 } from '../types/finance';
+
+export { formatDH, formatPct } from '../utils/format';
 
 /**
  * ============================================================================
@@ -66,15 +69,36 @@ import type {
  */
 
 // ============================================================================
-// HELPER FUNCTIONS
+// HELPER FUNCTIONS & GUARDS
 // ============================================================================
 
+function safeNum(value: unknown): number {
+  return typeof value === 'number' && Number.isFinite(value) ? value : 0;
+}
+
+function normalizeTargetMonth(value: unknown): number {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return Math.floor(value);
+  }
+  return 12;
+}
+
 export function sumFixedBills(bills: FixedBills): number {
-  return bills.rent + bills.utilities + bills.subscriptions + bills.other;
+  return (
+    safeNum(bills.rent) +
+    safeNum(bills.utilities) +
+    safeNum(bills.subscriptions) +
+    safeNum(bills.other)
+  );
 }
 
 export function sumVariableBuckets(buckets: VariableBuckets): number {
-  return buckets.groceries + buckets.transport + buckets.leisure + buckets.other;
+  return (
+    safeNum(buckets.groceries) +
+    safeNum(buckets.transport) +
+    safeNum(buckets.leisure) +
+    safeNum(buckets.other)
+  );
 }
 
 /**
@@ -86,29 +110,45 @@ export function applyWhatIfToBaseline(
   whatIf: WhatIfScenario = {}
 ): BaselineInput {
   const adjusted: BaselineInput = {
-    fixedSalary: baseline.fixedSalary,
-    sideIncome: baseline.sideIncome ?? 0,
-    currentBalance: baseline.currentBalance,
-    fixedBills: { ...baseline.fixedBills },
-    variableBuckets: { ...baseline.variableBuckets },
+    fixedSalary: safeNum(baseline.fixedSalary),
+    sideIncome: safeNum(baseline.sideIncome),
+    currentBalance: safeNum(baseline.currentBalance),
+    fixedBills: {
+      rent: safeNum(baseline.fixedBills.rent),
+      utilities: safeNum(baseline.fixedBills.utilities),
+      subscriptions: safeNum(baseline.fixedBills.subscriptions),
+      other: safeNum(baseline.fixedBills.other),
+    },
+    variableBuckets: {
+      groceries: safeNum(baseline.variableBuckets.groceries),
+      transport: safeNum(baseline.variableBuckets.transport),
+      leisure: safeNum(baseline.variableBuckets.leisure),
+      other: safeNum(baseline.variableBuckets.other),
+    },
   };
 
   if (whatIf.extraMonthlySaving !== undefined) {
-    adjusted.sideIncome = (adjusted.sideIncome || 0) + whatIf.extraMonthlySaving;
+    adjusted.sideIncome += Math.max(0, safeNum(whatIf.extraMonthlySaving));
   }
 
-  if (whatIf.extraMonthlyExpense !== undefined && whatIf.extraMonthlyExpense !== 0) {
-    adjusted.fixedBills.other += Math.abs(whatIf.extraMonthlyExpense);
+  if (whatIf.extraMonthlyExpense !== undefined) {
+    const extraExpense = safeNum(whatIf.extraMonthlyExpense);
+    if (extraExpense !== 0) {
+      adjusted.fixedBills.other += Math.abs(extraExpense);
+    }
   }
 
-  if (whatIf.variableSpendingCutPct !== undefined && whatIf.variableSpendingCutPct > 0) {
-    const cutFactor = Math.max(0, 1 - whatIf.variableSpendingCutPct / 100);
-    adjusted.variableBuckets = {
-      groceries: Math.round(adjusted.variableBuckets.groceries * cutFactor),
-      transport: Math.round(adjusted.variableBuckets.transport * cutFactor),
-      leisure: Math.round(adjusted.variableBuckets.leisure * cutFactor),
-      other: Math.round(adjusted.variableBuckets.other * cutFactor),
-    };
+  if (whatIf.variableSpendingCutPct !== undefined) {
+    const clampedCutPct = Math.min(100, Math.max(0, safeNum(whatIf.variableSpendingCutPct)));
+    if (clampedCutPct > 0) {
+      const cutFactor = 1 - clampedCutPct / 100;
+      adjusted.variableBuckets = {
+        groceries: Math.round(adjusted.variableBuckets.groceries * cutFactor),
+        transport: Math.round(adjusted.variableBuckets.transport * cutFactor),
+        leisure: Math.round(adjusted.variableBuckets.leisure * cutFactor),
+        other: Math.round(adjusted.variableBuckets.other * cutFactor),
+      };
+    }
   }
 
   return adjusted;
@@ -128,12 +168,24 @@ export function calculateItemProgress(
   item: FinanceItem,
   currentMonthIndex: number = 0
 ): ItemProgress {
-  const remaining = Math.max(0, item.totalAmount - item.alreadySaved);
-  const monthsRemaining = Math.max(1, item.targetMonth - currentMonthIndex);
-  const monthlySlice = remaining / monthsRemaining;
+  const totalAmount = Math.max(0, safeNum(item.totalAmount));
+  const alreadySaved = Math.max(0, safeNum(item.alreadySaved));
+  const remaining = Math.max(0, totalAmount - alreadySaved);
+  const normalizedTarget = normalizeTargetMonth(item.targetMonth);
+  const safeCurrentMonth = Number.isFinite(currentMonthIndex)
+    ? Math.floor(currentMonthIndex)
+    : 0;
+  const rawMonthsDiff = normalizedTarget - safeCurrentMonth;
+  const isOverdue = remaining > 0 && rawMonthsDiff <= 0;
+  const monthsRemaining =
+    isOverdue || (remaining <= 0 && rawMonthsDiff <= 0)
+      ? 0
+      : Math.max(1, rawMonthsDiff);
+  const monthlySlice =
+    remaining === 0 ? 0 : remaining / Math.max(1, monthsRemaining);
   const progressPct =
-    item.totalAmount > 0
-      ? Math.min(100, Math.max(0, (item.alreadySaved / item.totalAmount) * 100))
+    totalAmount > 0
+      ? Math.min(100, Math.max(0, (alreadySaved / totalAmount) * 100))
       : 100;
 
   return {
@@ -141,20 +193,53 @@ export function calculateItemProgress(
     monthsRemaining,
     monthlySlice,
     progressPct,
-    savedAmount: item.alreadySaved,
+    savedAmount: alreadySaved,
     remainingAmount: remaining,
+    isOverdue,
   };
 }
 
 export function calculateProgressRatio(item: FinanceItem): number {
-  if (item.totalAmount <= 0) return 1;
-  return Math.min(1, Math.max(0, item.alreadySaved / item.totalAmount));
+  const totalAmount = safeNum(item.totalAmount);
+  const alreadySaved = safeNum(item.alreadySaved);
+  if (totalAmount <= 0) return 1;
+  return Math.min(1, Math.max(0, alreadySaved / totalAmount));
 }
 
 function getMilestoneStatus(balance: number): 'surplus' | 'deficit' | 'break-even' {
-  if (balance > 0) return 'surplus';
-  if (balance < 0) return 'deficit';
+  const rounded = Math.round(safeNum(balance));
+  if (rounded > 0) return 'surplus';
+  if (rounded < 0) return 'deficit';
   return 'break-even';
+}
+
+export function buildKeyDriverFacts(
+  projection: MonthlyProjection | undefined,
+  items: FinanceItem[],
+  monthIndex: number
+): KeyDriverFact[] {
+  if (!projection) return [{ kind: 'noData' }];
+
+  const facts: KeyDriverFact[] = [];
+
+  if (projection.freeCashflow < 0) {
+    facts.push({ kind: 'deficit', amount: Math.abs(Math.round(projection.freeCashflow)) });
+  } else {
+    facts.push({ kind: 'surplus', amount: Math.round(projection.freeCashflow) });
+  }
+
+  if (projection.reservedForItems > 0) {
+    facts.push({ kind: 'reserved', amount: Math.round(projection.reservedForItems) });
+  }
+
+  const settlingItems = items.filter(
+    item => normalizeTargetMonth(item.targetMonth) === monthIndex
+  );
+  if (settlingItems.length > 0) {
+    facts.push({ kind: 'settling', names: settlingItems.map(i => i.name) });
+  }
+
+  return facts.length > 0 ? facts : [{ kind: 'stable' }];
 }
 
 export function buildKeyDrivers(
@@ -162,26 +247,23 @@ export function buildKeyDrivers(
   items: FinanceItem[],
   monthIndex: number
 ): string[] {
-  if (!projection) return ['لا بيانات'];
-
-  const drivers: string[] = [];
-
-  if (projection.freeCashflow < 0) {
-    drivers.push(`عجز شهري: ${Math.abs(Math.round(projection.freeCashflow))} درهم`);
-  } else {
-    drivers.push(`فائض شهري: ${Math.round(projection.freeCashflow)} درهم`);
-  }
-
-  if (projection.reservedForItems > 0) {
-    drivers.push(`محفوظ للأهداف/الديون: ${Math.round(projection.reservedForItems)} درهم/شهر`);
-  }
-
-  const settlingItems = items.filter(item => item.targetMonth === monthIndex);
-  if (settlingItems.length > 0) {
-    drivers.push(`تسوية: ${settlingItems.map(i => i.name).join('، ')}`);
-  }
-
-  return drivers.length > 0 ? drivers : ['مستقر'];
+  const facts = buildKeyDriverFacts(projection, items, monthIndex);
+  return facts.map(fact => {
+    switch (fact.kind) {
+      case 'noData':
+        return 'لا بيانات';
+      case 'deficit':
+        return `عجز شهري: ${fact.amount} درهم`;
+      case 'surplus':
+        return `فائض شهري: ${fact.amount} درهم`;
+      case 'reserved':
+        return `محفوظ للأهداف/الديون: ${fact.amount} درهم/شهر`;
+      case 'settling':
+        return `تسوية: ${fact.names.join('، ')}`;
+      case 'stable':
+        return 'مستقر';
+    }
+  });
 }
 
 // ============================================================================
@@ -197,43 +279,48 @@ export function computeForecast(
   const adjustedBaseline = applyWhatIfToBaseline(baseline, whatIf);
   const fixedBillsTotal = sumFixedBills(adjustedBaseline.fixedBills);
   const variableTotal = sumVariableBuckets(adjustedBaseline.variableBuckets);
-  const monthlyIncome = adjustedBaseline.fixedSalary + (adjustedBaseline.sideIncome || 0);
+  const monthlyIncome = adjustedBaseline.fixedSalary + adjustedBaseline.sideIncome;
 
-  // Pre-calculate monthly reserved amounts for each item across 12 months
+  // Pre-calculate monthly reserved amounts and overdue Month-0 settlements across 12 months
   const monthlyReserved: number[] = new Array(12).fill(0);
   const itemSettlementsByMonth: ItemSettlement[][] = Array.from({ length: 12 }, () => []);
+  let immediateDueMonth0 = 0;
 
   for (const item of items) {
-    const remaining = Math.max(0, item.totalAmount - item.alreadySaved);
+    const totalAmount = Math.max(0, safeNum(item.totalAmount));
+    const alreadySaved = Math.max(0, safeNum(item.alreadySaved));
+    const remaining = Math.max(0, totalAmount - alreadySaved);
+    const targetMonth = normalizeTargetMonth(item.targetMonth);
 
     if (remaining <= 0) {
       // Fully funded item: record settlement if targetMonth falls within 12-month horizon
-      if (item.targetMonth >= 0 && item.targetMonth < 12) {
-        itemSettlementsByMonth[item.targetMonth].push({
+      if (targetMonth >= 0 && targetMonth < 12) {
+        itemSettlementsByMonth[targetMonth].push({
           itemId: item.id,
           itemName: item.name,
           category: item.category,
-          amount: item.totalAmount,
+          amount: totalAmount,
           wasReserved: true,
         });
       }
       continue;
     }
 
-    if (item.targetMonth <= 0) {
-      // Target month is current month: settles immediately in month 0
+    if (targetMonth <= 0) {
+      // Guard G3: overdue or due-this-month unpaid balance settles immediately in month 0
+      immediateDueMonth0 += remaining;
       itemSettlementsByMonth[0].push({
         itemId: item.id,
         itemName: item.name,
         category: item.category,
-        amount: item.totalAmount,
-        wasReserved: true,
+        amount: remaining,
+        wasReserved: false,
       });
       continue;
     }
 
     // targetMonth >= 1: reserve constant monthly slice across all months before settlement
-    const monthsRemaining = item.targetMonth;
+    const monthsRemaining = targetMonth;
     const monthlySlice = remaining / monthsRemaining;
 
     // Reserve monthly slice for each month up to (but NOT including) target month
@@ -244,12 +331,12 @@ export function computeForecast(
     }
 
     // Settlement occurs at target month (if within 12-month horizon)
-    if (item.targetMonth < 12) {
-      itemSettlementsByMonth[item.targetMonth].push({
+    if (targetMonth < 12) {
+      itemSettlementsByMonth[targetMonth].push({
         itemId: item.id,
         itemName: item.name,
         category: item.category,
-        amount: item.totalAmount,
+        amount: totalAmount,
         wasReserved: true, // Fully covered by prior monthly reservations
       });
     }
@@ -262,7 +349,9 @@ export function computeForecast(
   for (let m = 0; m < 12; m++) {
     const startingBalance = balance;
     const reservedThisMonth = monthlyReserved[m];
-    const freeCashflow = monthlyIncome - fixedBillsTotal - variableTotal - reservedThisMonth;
+    const immediateDueThisMonth = m === 0 ? immediateDueMonth0 : 0;
+    const freeCashflow =
+      monthlyIncome - fixedBillsTotal - variableTotal - reservedThisMonth - immediateDueThisMonth;
     const endingBalance = startingBalance + freeCashflow;
 
     const isMilestone4 = m === 3; // Month 4 = index 3
@@ -274,7 +363,7 @@ export function computeForecast(
       label: getMonthLabel(m, baseDate),
       startingBalance,
       salary: adjustedBaseline.fixedSalary,
-      sideIncome: adjustedBaseline.sideIncome || 0,
+      sideIncome: adjustedBaseline.sideIncome,
       fixedBillsTotal,
       variableTotal,
       reservedForItems: reservedThisMonth,
@@ -301,6 +390,7 @@ export function computeForecast(
       projectedBalance: balance4,
       status: getMilestoneStatus(balance4),
       keyDrivers: buildKeyDrivers(monthly[3], items, 3),
+      driverFacts: buildKeyDriverFacts(monthly[3], items, 3),
     },
     {
       month: 8,
@@ -308,6 +398,7 @@ export function computeForecast(
       projectedBalance: balance8,
       status: getMilestoneStatus(balance8),
       keyDrivers: buildKeyDrivers(monthly[7], items, 7),
+      driverFacts: buildKeyDriverFacts(monthly[7], items, 7),
     },
     {
       month: 12,
@@ -315,6 +406,7 @@ export function computeForecast(
       projectedBalance: balance12,
       status: getMilestoneStatus(balance12),
       keyDrivers: buildKeyDrivers(monthly[11], items, 11),
+      driverFacts: buildKeyDriverFacts(monthly[11], items, 11),
     },
   ];
 
@@ -395,21 +487,4 @@ export function computeWhatIfDelta(
       goalCompletionChanges,
     },
   };
-}
-
-// ============================================================================
-// UTILITIES: FORMAT CURRENCY & PERCENTAGE
-// ============================================================================
-
-export function formatDH(amount: number): string {
-  return new Intl.NumberFormat('ar-MA', {
-    style: 'currency',
-    currency: 'MAD',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount);
-}
-
-export function formatPct(value: number): string {
-  return `${Math.round(value)}%`;
 }

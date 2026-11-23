@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 2,
+  "baseline": {
+    "fixedSalary": 10000,
+    "sideIncome": 0,
+    "currentBalance": 5000,
+    "fixedBills": { "rent": 3000, "utilities": 500, "subscriptions": 0, "other": 0 },
+    "variableBuckets": { "groceries": 1500, "transport": 400, "leisure": 300, "other": 0 }
+  },
+  "items": [
+    {
+      "id": "bad-target",
+      "name": "سفر",
+      "category": "goal",
+      "totalAmount": 5000,
+      "alreadySaved": 1000,
+      "targetDate": "2026-13",
+      "createdAt": 1700000000000
+    }
+  ],
+  "whatIf": {},
+  "updatedAt": 1700000000000
+}

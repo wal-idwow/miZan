@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 2,
+  "baseline": {
+    "fixedSalary": 10000,
+    "sideIncome": 0,
+    "currentBalance": 5000,
+    "fixedBills": { "rent": 3500, "utilities": 500, "subscriptions": 200, "other": 100 },
+    "variableBuckets": { "groceries": 2000, "transport": 600, "leisure": 400, "other": 200 }
+  },
+  "items": [
+    {
+      "id": "v2-item-1",
+      "name": "صندوق الطوارئ",
+      "category": "goal",
+      "totalAmount": 20000,
+      "alreadySaved": 5000,
+      "targetDate": "2027-05",
+      "createdAt": 1700000000000
+    }
+  ],
+  "whatIf": {},
+  "balanceUpdatedAt": 1700000000000,
+  "meta": { "lastExportAt": 1700000000000 },
+  "updatedAt": 1700000000000
+}

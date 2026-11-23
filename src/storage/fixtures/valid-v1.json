@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "baseline": {
+    "fixedSalary": 12000,
+    "sideIncome": 1500,
+    "currentBalance": 15000,
+    "fixedBills": { "rent": 4000, "utilities": 800, "subscriptions": 300, "other": 200 },
+    "variableBuckets": { "groceries": 2500, "transport": 800, "leisure": 600, "other": 300 }
+  },
+  "items": [
+    {
+      "id": "v1-item-1",
+      "name": "مصاريف العيد",
+      "category": "shock",
+      "totalAmount": 8000,
+      "alreadySaved": 2000,
+      "targetMonth": 3,
+      "createdAt": 1700000000000
+    },
+    {
+      "id": "v1-item-2",
+      "name": "قرض السيارة",
+      "category": "debt",
+      "totalAmount": 30000,
+      "alreadySaved": 12000,
+      "targetMonth": 10,
+      "createdAt": 1700000000000
+    }
+  ],
+  "whatIf": { "extraMonthlySaving": 500 },
+  "updatedAt": 1700000000000
+}

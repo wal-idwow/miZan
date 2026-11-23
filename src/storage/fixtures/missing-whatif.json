@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 2,
+  "baseline": {
+    "fixedSalary": 8000,
+    "sideIncome": 500,
+    "currentBalance": 1000,
+    "fixedBills": { "rent": 2500, "utilities": 400, "subscriptions": 100, "other": 0 },
+    "variableBuckets": { "groceries": 1500, "transport": 300, "leisure": 200, "other": 0 }
+  },
+  "items": [],
+  "updatedAt": 1700000000000
+}
